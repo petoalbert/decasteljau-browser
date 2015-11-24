@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Bézier-curve demo</title>
+		<meta charset="UTF-8" />
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100%; }
+		</style>
+	</head>
+	<body>
+		<script src="three.min.js"></script>
+		<script src="bezier.js"></script>
+		<script src="dat.gui.min.js"></script>
+		<script>
+
+		window.addEventListener( 'load', init );
+		
+		var renderer, scene, camera, mouse, rayCaster, controlPointPlane, bezier;
+		var mousemove = {
+			pos: new THREE.Vector2(),
+			first: true
+		}
+		var mousedown;
+		var dragdistance;
+					
+		var controls = {
+			duration: 5,
+			clear: function() {
+				scene.remove(bezier);
+				bezier = new BezierCurve();
+				scene.add(bezier);
+			},
+			animate: function() {
+				bezier.start(this.duration);
+			}
+		};
+		
+		function init() {
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera(
+				40,window.innerWidth/window.innerHeight, 0.1, 1000);
+			
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			document.body.appendChild(renderer.domElement);	
+			
+			bezier = new BezierCurve();
+			scene.add(bezier);
+			
+			controlPointPlane = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
+			
+			rayCaster = new THREE.Raycaster();
+			mouse = new THREE.Vector2();
+			
+			camera.position.z = 30;
+			
+			render();
+			
+			var canvas = renderer.domElement;
+			//canvas.addEventListener("click", onDocumentMouseClick             //                           ,false);
+			canvas.addEventListener("wheel", onWheel, false);
+			canvas.addEventListener("mousedown", onMouseDown, false);
+			canvas.addEventListener("mouseup", onMouseUp, false);
+			canvas.addEventListener("mousemove", onMouseMove, false);
+			
+			var gui = new dat.GUI();
+			gui.add(controls, 'duration', 1, 15);
+			gui.add(controls, 'clear');
+			gui.add(controls, 'animate');
+			gui.open();
+			
+		}
+		
+		function onMouseDown ( event ) {
+			mousedown = true;
+			dragdistance = 0;
+			mouse.x = (event.clientX / window.innerWidth) * 2 -1;
+			mouse.y = - (event.clientY / window.innerHeight) * 2 +1;
+			mousemove.first = true;
+		}
+		
+		function onMouseMove ( event ) {
+			
+			if (!mousedown) return;
+					
+			var newmouse = new THREE.Vector2(
+				(event.clientX / window.innerWidth) * 2 -1,
+				(event.clientY / window.innerHeight) * 2 +1);
+			
+			if (mousemove.first) {
+				mousemove.first = false;
+				mousemove.pos.copy(newmouse);
+				return;
+			}
+			
+			var rotationAxisView = new THREE.Vector3(
+				-(newmouse.y - mousemove.pos.y),
+				-(newmouse.x - mousemove.pos.x),
+				0);
+				
+			var length = rotationAxisView.length();
+			
+			dragdistance += length;
+			
+			if (dragdistance < 0.3) {
+				return;
+			}
+			
+			mousemove.pos.copy(newmouse);
+			rotationAxisView.normalize();
+			
+			var rotation = new THREE.Matrix4();
+			rotation.extractRotation(camera.matrix);//.getInverse(rotation);
+			rotationAxisView.applyMatrix4(rotation);
+			
+			rotation.makeRotationAxis(rotationAxisView, 300*length*Math.PI/180);
+			camera.position.applyMatrix4(rotation);
+			camera.applyMatrix(rotation);
+			
+			x = new THREE.Vector3(0,0,1).normalize();
+			controlPointPlane = new THREE.Plane(
+									camera.getWorldDirection(),
+									0);
+			
+		}
+		function onMouseUp ( event ) {
+			mousedown = false;
+			if (dragdistance < 0.1) {
+				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+				mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+				rayCaster.setFromCamera(mouse, camera);
+				var intersection = rayCaster.ray
+											.intersectPlane(controlPointPlane);
+				bezier.addPoint(intersection);
+			}
+		}
+		
+		function onDocumentMouseClick( event ) {			
+			event.preventDefault();
+				
+
+		}
+		
+		function onWheel ( event ) {
+			var delta = -(event.deltaX + event.deltaY + event.deltaZ) / 100;
+			camera.zoom += delta;
+			camera.updateProjectionMatrix();
+		}
+		
+		function render() {
+			requestAnimationFrame( render );
+			bezier.update();
+			renderer.render( scene, camera );
+		}
+			
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+		</script>
+	</body>
+</html>
