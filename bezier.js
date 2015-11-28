@@ -1,4 +1,18 @@
 /* global THREE */
+
+function BezierControlPoint(coords) {
+    var geometry = new THREE.SphereGeometry(0.2,30,30);
+    var material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    THREE.Mesh.call(this, geometry, material);
+    if (coords) {
+        this.position.copy(coords);
+    }
+}
+
+BezierControlPoint.prototype = Object.create(THREE.Mesh.prototype);
+BezierControlPoint.prototype.constructor = BezierControlPoint;
+
+
 function BezierCurve() {
 
 	THREE.Group.call(this);
@@ -49,14 +63,6 @@ BezierCurve.prototype.createLevel = function (segments) {
 	
 };
 
-BezierCurve.prototype.createControlPoint = function (coords) {
-	var geometry = new THREE.SphereGeometry(0.2,30,30);
-	var material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-	var point = new THREE.Mesh(geometry, material);
-	point.position.copy(coords);
-	return point;
-};
-
 BezierCurve.prototype.createControlLine = function() {
 	var geometry = new THREE.Geometry();
 	this.points.forEach(function(point, index, array) {
@@ -70,14 +76,13 @@ BezierCurve.prototype.createControlLine = function() {
 };
 
 BezierCurve.prototype.addPoint = function (controlPoint) {
-	var point = this.createControlPoint(controlPoint);
+	var point = new BezierControlPoint(controlPoint);
 	this.add(point);
 	this.points.push(point);
 
 	if (this.points.length > 1) {
 		this.createControlLine();
 	}
-	
 
 	if (this.clock.running) {
 		this.stop();
