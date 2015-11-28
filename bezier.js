@@ -124,21 +124,19 @@ DeCasteljauAnimation.prototype.constructor = DeCasteljauAnimation;
 
 DeCasteljauAnimation.prototype.reset = function() {
     var linenum = this.linenumFromBezier();
-    var basecolor = 0x44ff33;
-    var colorstep = Math.floor((0xffffff - basecolor) / (linenum-1));
-    console.log("Colorstep: " + colorstep);
-    var x = colorstep + basecolor;
-    console.log("Sum: " + x);
     this.lines.forEach((l,i,a) => this.remove(l));
     this.lines = []
+    var currentcolor = new THREE.Color(0x44ff33);
+    var step = new THREE.Color(1-currentcolor.r,
+                               1-currentcolor.g,
+                               1-currentcolor.b).multiplyScalar(1/linenum);
     for (var i=0; i<linenum; i++) {
         geometry = new THREE.Geometry();
-        for (var j=0; j<bezier.points.length-i; j++) {
+        for (var j=0; j<bezier.points.length-i-1; j++) {
            geometry.vertices.push(new THREE.Vector3(0,0,0));
         } 
-        var xcolor = basecolor + i*colorstep;
-        console.log("Color[" + i + "] = " + xcolor);
-        material = new THREE.LineBasicMaterial( {color: xcolor} );
+        material = new THREE.LineBasicMaterial( {color: currentcolor.getHex()} );
+        currentcolor.add(step);
         line = new THREE.Line(geometry, material);
         this.lines.push(line);
         this.add(line);
@@ -168,11 +166,11 @@ DeCasteljauAnimation.prototype.update = function(t) {
     this.visible = true;
     var geometry = this.bezier.points.map((p,i,a) => p.position);
     for (var i=0; i<this.lines.length; i++) {
+        geometry = this.bezier.deCasteljau(geometry, t, true);
         geometry.forEach((coords,j,a) => {
-            this.lines[i].geometry.vertices[j] = coords;
+            this.lines[i].geometry.vertices[j] = coords.clone();
         });
         this.lines[i].geometry.verticesNeedUpdate = true;
-        geometry = this.bezier.deCasteljau(geometry, t, true);
     }
 }
 
