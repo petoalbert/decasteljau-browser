@@ -1,8 +1,9 @@
 /* global THREE */
-function Controls(scene, canvas, camera, bezier) {
+function Controls(scene, canvas, camera, bezier, animation) {
     this.scene = scene;
     this.camera = camera;
     this.bezier = bezier;
+    this.animation = animation;
 
     this.mousedown = false;
     this.dragdistance = 0;
@@ -15,14 +16,13 @@ function Controls(scene, canvas, camera, bezier) {
         first: true
     };
 
-    var bezier = this.bezier;
     var controls = {
         duration: 5,
         clear: function() { 
             bezier.reset()
         },
         animate: function() {
-            bezier.start(this.duration);
+            animation.start();
         }
     };
     var gui = new dat.GUI();

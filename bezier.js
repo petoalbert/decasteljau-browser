@@ -12,6 +12,17 @@ function BezierControlPoint(coords) {
 BezierControlPoint.prototype = Object.create(THREE.Mesh.prototype);
 BezierControlPoint.prototype.constructor = BezierControlPoint;
 
+function BezierControlLine(points) {
+	var geometry = new THREE.Geometry();
+    points.forEach(function(point, index, array) {
+		geometry.vertices.push(point);
+	});
+	var material = new THREE.LineBasicMaterial({ color: 0x44ff33});
+    THREE.Line.call(this, geometry, material);
+}
+
+BezierControlLine.prototype = Object.create(THREE.Line.prototype);
+BezierControlLine.prototype.constructor = BezierControlLine;
 
 function BezierCurve() {
 
@@ -21,19 +32,13 @@ function BezierCurve() {
 }
 
 BezierCurve.prototype = Object.create(THREE.Group.prototype);
+BezierCurve.prototype.constructor = BezierCurve;
 
 BezierCurve.prototype.init = function() {
 	this.points = [];
-	this.levels = [];
-	this.levelGroup = new THREE.Group();
-	this.levelGroup.visible = false;
-	this.add(this.levelGroup);
 	this.controlLine;
-	this.clock = new THREE.Clock(false);
-	this.duration = 0;
 	this.segments = 100;
 	this.curve = null;
-	this.baseColor = 0x44ff33;
 }
 
 BezierCurve.prototype.reset = function() {
@@ -45,35 +50,13 @@ BezierCurve.prototype.reset = function() {
     this.init();
 }
 
-BezierCurve.prototype.createLevel = function (segments) {
-	var baseColor = this.baseColor;
-	var brightestColor = 0xffffff;
-	
-	var increment = Math.round((brightestColor - baseColor) / (this.points.length-2));
-	var geometry = new THREE.Geometry();
-	for (var i = 0; i<segments; i++) {
-		geometry.vertices.push(new THREE.Vector3(0, 0, 0));
-	}
-	
-	var material = new THREE.LineBasicMaterial({ color: brightestColor - (segments-2)*increment,
-	                                             linewidth: 4 });
-	var level = new THREE.Line(geometry, material);
-	this.levelGroup.add(level);
-	this.levels.push(level);
-	
-};
-
-BezierCurve.prototype.createControlLine = function() {
-	var geometry = new THREE.Geometry();
-	this.points.forEach(function(point, index, array) {
-		geometry.vertices.push(point.position.clone());
-	});
-	var material = new THREE.LineBasicMaterial({ color: this.baseColor,
-	                                              linewidth: 4});
-	if (this.controlLine) this.remove(this.controlLine);
-	this.controlLine = new THREE.Line(geometry, material);
-	this.add(this.controlLine);
-};
+BezierCurve.prototype.setControlLine = function(controlLine) {
+    if (this.controlLine) {
+        this.remove(this.controlLine);
+    }
+    this.controlLine = controlLine;
+    this.add(controlLine);
+}
 
 BezierCurve.prototype.addPoint = function (controlPoint) {
 	var point = new BezierControlPoint(controlPoint);
@@ -81,13 +64,10 @@ BezierCurve.prototype.addPoint = function (controlPoint) {
 	this.points.push(point);
 
 	if (this.points.length > 1) {
-		this.createControlLine();
+        this.setControlLine(new BezierControlLine(
+                    this.points.map(p => p.position)));
 	}
 
-	if (this.clock.running) {
-		this.stop();
-	}
-	
 	this.computeCurve();
 
 };
@@ -99,51 +79,23 @@ BezierCurve.prototype.computeCurve = function () {
 
 	if (this.curve) this.remove(this.curve);
 	
-	if (this.levels) {
-		this.levels.forEach(function(level,index,array) {
-			self.levelGroup.remove(level);
-		});
-		this.levels = [];
-	}
-
-	for (var i=0; i<this.points.length-1; i++) {
-		this.createLevel(this.points.length-i);
-	}
-	
 	var geometry = new THREE.Geometry();
-	var material = new THREE.LineBasicMaterial({ color: 0xff3399, 
-	                                             linewidth: 4 });
-
-	for (var i = 0; i < 1; i += 1 / this.segments) {
-		var coords = this.animate(i);
-		geometry.vertices.push(coords);
+	var material = new THREE.LineBasicMaterial({ color: 0xff3399 });
+	for (var t = 0; t < 1; t += 1 / this.segments) {
+		geometry.vertices.push(
+                this.deCasteljau(this.points.map(p => p.position),t)
+        );
 	}
 
 	this.curve = new THREE.Line(geometry, material);
 	this.add(this.curve);
-
 };
 
-	
-/* t must be in the [0,1] interval */
-BezierCurve.prototype.animate = function (t) {
-	var self = this;
-	var points = []
-	this.points.forEach(function (item, index, array) {
-		points.push(item.position.clone());
-	});
-	this.levels.forEach(function(level,index,array) {
-		points = self.setLevel(points, level, t);
-	});
-	return points[0];
-};
 
-BezierCurve.prototype.setLevel = function (points, level, t) {
-	points.forEach(function (item, index, array) {
-		level.geometry.vertices[index] = item;
-	});
-	level.geometry.verticesNeedUpdate = true;
-
+BezierCurve.prototype.deCasteljau = function (points, t, dontRecurse) {
+    if (points.length == 1) {
+        return points[0];
+    }
 	var newPoints = [];
 	for (var i = 0; i < points.length - 1; i++) {
 		var vector = new THREE.Vector3(0, 0, 0);
@@ -151,31 +103,73 @@ BezierCurve.prototype.setLevel = function (points, level, t) {
 		vector.addScaledVector(points[i + 1], t);
 		newPoints.push(vector);
 	}
-	return newPoints;
+    if (!dontRecurse) {
+	    return this.deCasteljau(newPoints, t);
+    } else {
+        return newPoints;
+    }
 };
 
-BezierCurve.prototype.update = function () {
-	if (!this.clock.running) {
-		return;
-	}
-	if (this.clock.getElapsedTime() > this.duration) {
-		this.stop();
-	}
-	this.animate(this.clock.getElapsedTime() / this.duration)
-};
+function DeCasteljauAnimation(bezier, duration) {
+    THREE.Group.call(this);
+    this.duration = duration;
+    this.bezier = bezier;
+    this.clock = new THREE.Clock(false);
+    this.lines = []
+    this.reset();
+}
 
-BezierCurve.prototype.start = function (duration) {
-	this.duration = duration;
-	this.clock.elapsedTime = 0;
-	this.levelGroup.visible = true;
-	this.clock.start();
-};
+DeCasteljauAnimation.prototype = Object.create(THREE.Group.prototype);
+DeCasteljauAnimation.prototype.constructor = DeCasteljauAnimation;
 
-BezierCurve.prototype.stop = function () {
-	this.clock.stop();
-	this.levelGroup.visible = false;
-};
+DeCasteljauAnimation.prototype.reset = function() {
+    this.lines.forEach((l,i,a) => this.remove(l));
+    this.lines = []
+    for (var i=0; i<bezier.points.length-2; i++) {
+        geometry = new THREE.Geometry();
+        for (var j=0; j<bezier.points.length-i; j++) {
+           geometry.vertices.push(new THREE.Vector3(0,0,0));
+        } 
+        material = new THREE.LineBasicMaterial( {color: 0x345673} );
+        line = new THREE.Line(geometry, material);
+        this.lines.push(line);
+        this.add(line);
+    }
+    this.visible = false;
+}
 
-BezierCurve.prototype.constructor = BezierCurve;
+DeCasteljauAnimation.prototype.updateAnimation = function() {
+    if (!this.clock.running) return;
+    var t = this.clock.getElapsedTime() / this.duration;
+    if (t > 1) {
+        this.visible = false;
+        this.stop();
+    } else {
+        this.update(t);
+    }
+}
 
+DeCasteljauAnimation.prototype.update = function(t) {
+    if (this.bezier.points.length-1 != this.lines.length) {
+        this.reset();
+    }
+    this.visible = true;
+    var geometry = this.bezier.points.map((p,i,a) => p.position);
+    for (var i=0; i<this.lines.length; i++) {
+        geometry.forEach((coords,j,a) => {
+            this.lines[i].geometry.vertices[j] = coords;
+        });
+        this.lines[i].geometry.verticesNeedUpdate = true;
+        geometry = this.bezier.deCasteljau(geometry, t, true);
+    }
+}
+
+DeCasteljauAnimation.prototype.stop = function(){
+    this.clock.stop();
+}
+
+DeCasteljauAnimation.prototype.start = function() {
+    this.clock = new THREE.Clock(true);
+    this.clock.start();
+}
 
