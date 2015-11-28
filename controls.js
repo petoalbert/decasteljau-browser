@@ -15,14 +15,16 @@ function Controls(scene, canvas, camera, bezier) {
         first: true
     };
 
-    var bezier = this.bezier
-        var controls = {
-            duration: 5,
-            clear: function() { },
-            animate: function() {
-                bezier.start(this.duration);
-            }
-        };
+    var bezier = this.bezier;
+    var controls = {
+        duration: 5,
+        clear: function() { 
+            bezier.reset()
+        },
+        animate: function() {
+            bezier.start(this.duration);
+        }
+    };
     var gui = new dat.GUI();
     gui.add(controls, 'duration', 1, 15);
     gui.add(controls, 'clear');

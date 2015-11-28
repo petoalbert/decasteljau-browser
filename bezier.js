@@ -2,7 +2,13 @@
 function BezierCurve() {
 
 	THREE.Group.call(this);
+    this.init();
 
+}
+
+BezierCurve.prototype = Object.create(THREE.Group.prototype);
+
+BezierCurve.prototype.init = function() {
 	this.points = [];
 	this.levels = [];
 	this.levelGroup = new THREE.Group();
@@ -14,10 +20,16 @@ function BezierCurve() {
 	this.segments = 100;
 	this.curve = null;
 	this.baseColor = 0x44ff33;
-
 }
 
-BezierCurve.prototype = Object.create(THREE.Group.prototype);
+BezierCurve.prototype.reset = function() {
+    var children = this.children.slice();
+    var self = this;
+    children.forEach(function(child,index,array) {
+        self.remove(child);
+    });
+    this.init();
+}
 
 BezierCurve.prototype.createLevel = function (segments) {
 	var baseColor = this.baseColor;
@@ -29,7 +41,7 @@ BezierCurve.prototype.createLevel = function (segments) {
 		geometry.vertices.push(new THREE.Vector3(0, 0, 0));
 	}
 	
-	var material = new THREE.LineBasicMaterial({ color: brightestColor - (egments-2)*increment,
+	var material = new THREE.LineBasicMaterial({ color: brightestColor - (segments-2)*increment,
 	                                             linewidth: 4 });
 	var level = new THREE.Line(geometry, material);
 	this.levelGroup.add(level);
