@@ -23,13 +23,13 @@ BezierCurve.prototype.createLevel = function (segments) {
 	var baseColor = this.baseColor;
 	var brightestColor = 0xffffff;
 	
-	var increment = Math.round((brightestColor - baseColor) /                                               (this.points.length-2));
+	var increment = Math.round((brightestColor - baseColor) / (this.points.length-2));
 	var geometry = new THREE.Geometry();
 	for (var i = 0; i<segments; i++) {
 		geometry.vertices.push(new THREE.Vector3(0, 0, 0));
 	}
 	
-	var material = new THREE.LineBasicMaterial({ color: brightestColor -                                                   (segments-2)*increment,
+	var material = new THREE.LineBasicMaterial({ color: brightestColor - (egments-2)*increment,
 	                                             linewidth: 4 });
 	var level = new THREE.Line(geometry, material);
 	this.levelGroup.add(level);
