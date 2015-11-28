@@ -17,8 +17,8 @@ function Controls(scene, canvas, camera, bezier, animation) {
     };
 
     var controls = {
-        duration: 5,
         clear: function() { 
+            animation.stop()
             bezier.reset()
         },
         animate: function() {
@@ -26,7 +26,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
         }
     };
     var gui = new dat.GUI();
-    gui.add(controls, 'duration', 1, 15);
+    gui.add(animation, 'duration', 1, 15);
     gui.add(controls, 'clear');
     gui.add(controls, 'animate');
     gui.open();
