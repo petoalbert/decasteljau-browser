@@ -123,19 +123,31 @@ DeCasteljauAnimation.prototype = Object.create(THREE.Group.prototype);
 DeCasteljauAnimation.prototype.constructor = DeCasteljauAnimation;
 
 DeCasteljauAnimation.prototype.reset = function() {
+    var linenum = this.linenumFromBezier();
+    var basecolor = 0x44ff33;
+    var colorstep = Math.floor((0xffffff - basecolor) / (linenum-1));
+    console.log("Colorstep: " + colorstep);
+    var x = colorstep + basecolor;
+    console.log("Sum: " + x);
     this.lines.forEach((l,i,a) => this.remove(l));
     this.lines = []
-    for (var i=0; i<bezier.points.length-2; i++) {
+    for (var i=0; i<linenum; i++) {
         geometry = new THREE.Geometry();
         for (var j=0; j<bezier.points.length-i; j++) {
            geometry.vertices.push(new THREE.Vector3(0,0,0));
         } 
-        material = new THREE.LineBasicMaterial( {color: 0x345673} );
+        var xcolor = basecolor + i*colorstep;
+        console.log("Color[" + i + "] = " + xcolor);
+        material = new THREE.LineBasicMaterial( {color: xcolor} );
         line = new THREE.Line(geometry, material);
         this.lines.push(line);
         this.add(line);
     }
     this.visible = false;
+}
+
+DeCasteljauAnimation.prototype.linenumFromBezier = function(){
+    return bezier.points.length-2;
 }
 
 DeCasteljauAnimation.prototype.updateAnimation = function() {
@@ -150,7 +162,7 @@ DeCasteljauAnimation.prototype.updateAnimation = function() {
 }
 
 DeCasteljauAnimation.prototype.update = function(t) {
-    if (this.bezier.points.length-1 != this.lines.length) {
+    if (this.linenumFromBezier() != this.lines.length) {
         this.reset();
     }
     this.visible = true;
@@ -166,9 +178,10 @@ DeCasteljauAnimation.prototype.update = function(t) {
 
 DeCasteljauAnimation.prototype.stop = function(){
     this.clock.stop();
+    this.visible = false;
 }
 
-DeCasteljauAnimation.prototype.start = function() {
+DeCasteljauAnimation.prototype.start = function(duration) {
     this.clock = new THREE.Clock(true);
     this.clock.start();
 }
