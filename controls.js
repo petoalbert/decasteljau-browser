@@ -26,9 +26,10 @@ function Controls(scene, canvas, camera, bezier, animation) {
         }
     };
     var gui = new dat.GUI();
-    gui.add(animation, 'duration', 1, 15);
     gui.add(controls, 'clear');
-    gui.add(controls, 'animate');
+    var animationGui = gui.addFolder('Animation');
+    animationGui.add(animation, 'duration', 1, 15);
+    animationGui.add(controls, 'animate');
     gui.open();
 
     var self = this;
