@@ -26,10 +26,12 @@ function Controls(scene, canvas, camera, bezier, animation) {
         }
     };
     var gui = new dat.GUI();
-    gui.add(controls, 'clear');
+    var segmentsController = gui.add(bezier, 'segments', 1);
+    segmentsController.onChange(val => bezier.computeCurve());
     var animationGui = gui.addFolder('Animation');
     animationGui.add(animation, 'duration', 1, 15);
     animationGui.add(controls, 'animate');
+    gui.add(controls, 'clear');
     gui.open();
 
     var self = this;
