@@ -7,13 +7,14 @@ function Controls(scene, canvas, camera, bezier, animation) {
     this.animation = animation;
 
     this.mousedown = false;
-    this.dragdistance = 0;
+    this.mousemovedistance = 0;
     this.rayCaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.controlPointPlane = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
     this.axesGroup = this.addAxes();
     scene.add(this.axesGroup);
     this.elementUnderMouse = null;
+    this.editedElement = null;
 
 
     this.mousemove = {
@@ -30,16 +31,18 @@ function Controls(scene, canvas, camera, bezier, animation) {
             animation.start();
         }
     };
-    var gui = new dat.GUI();
-    var segmentsController = gui.add(bezier, 'segments', 1);
+
+    this.gui = new dat.GUI();
+    var segmentsController = this.gui.add(bezier, 'segments', 1);
     segmentsController.onChange(val => bezier.computeCurve());
-    var axesGui = gui.addFolder("Helper axes");
+    var axesGui = this.gui.addFolder("Helper axes");
     axesGui.add(this.axesGroup, 'visible');
-    var animationGui = gui.addFolder('Animation');
+    var animationGui = this.gui.addFolder('Animation');
     animationGui.add(animation, 'duration', 1, 15);
     animationGui.add(controls, 'animate');
-    gui.add(controls, 'clear');
-    gui.open();
+    this.gui.add(controls, 'clear');
+    this.controlPointGUI = this.gui.addFolder('Control point');
+    this.gui.open();
 
     var self = this;
     canvas.addEventListener("wheel", e => self.onWheel(e), false);
@@ -74,9 +77,10 @@ Controls.prototype.onWheel = function( event ) {
 }
 
 Controls.prototype.onMouseUp = function( event ) {
+    this.draggedElement = false;
     this.mousedown = false;
     var mouse = new THREE.Vector2(0,0);
-    if (this.dragdistance < 0.1) {
+    if (!this.elementUnderMouse && this.mousemovedistance < 0.1) {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         this.rayCaster.setFromCamera(mouse, this.camera);
@@ -85,27 +89,88 @@ Controls.prototype.onMouseUp = function( event ) {
         var newElement = this.bezier.addPoint(intersection);
 
         newElement.select();
-        if (this.elementUnderCursor) this.elementUnderCursor.unselect();
-        this.elementUnderCursor = newElement;
+        if (this.elementUnderMouse) this.elementUnderMouse.unselect();
+        this.elementUnderMouse = newElement;
     }
+}
+
+Controls.prototype.finishEdit = function() {
+    if (this.editedElement) {
+        this.editedElement.finishEditing();
+        this.controlPointGUI.remove(this.currentX);
+        this.controlPointGUI.remove(this.currentY);
+        this.controlPointGUI.remove(this.currentZ);
+        this.controlPointGUI.remove(this.removeCurrent);
+        this.controlPointGUI.close();
+    }
+}
+
+Controls.prototype.editControlPoint = function() {
+    this.finishEdit();
+    this.editedElement = this.elementUnderMouse;
+    this.editedElement.modify();
+    this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
+    this.currentX.onChange(v => this.bezier.computeCurve());
+    this.currentY = this.controlPointGUI.add(this.editedElement.position, "y");
+    this.currentY.onChange(v => this.bezier.computeCurve());
+    this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z");
+    this.currentZ.onChange(v => this.bezier.computeCurve());
+    var controls = {
+        remove: () => {
+            this.bezier.removePoint(this.editedElement);
+            this.controlPointGUI.remove(this.currentX);
+            this.controlPointGUI.remove(this.currentY);
+            this.controlPointGUI.remove(this.currentZ);
+            this.controlPointGUI.remove(this.removeCurrent);
+            this.controlPointGUI.close();
+            this.editedElement = null;
+        }
+    }
+    this.removeCurrent = this.controlPointGUI.add(controls, "remove");
+    this.controlPointGUI.open();
 }
 
 Controls.prototype.onMouseDown = function( event ) {
     this.mousedown = true;
-    this.dragdistance = 0;
+    this.mousemovedistance = 0;
     this.mousemove.first = true;
+    if (this.elementUnderMouse && this.elementUnderMouse != this.editedElement) {
+        this.draggedelement = true;
+        this.editControlPoint();
+    }
 }
 
+
 Controls.prototype.onMouseMove = function( event ) {
-    this.selectElements( event );
-    if (this.mousedown) {
-        this.rotateCamera( event );
+    if (!this.draggedElement) {
+        this.selectElements( event );
     }
+    if (this.mousedown) {
+        if (this.elementUnderMouse && this.elementUnderMouse == this.editedElement) {
+            this.draggedElement = true;
+        }
+        if (this.draggedElement) {
+            this.moveElement( event );
+        } else {
+            this.rotateCamera( event );
+        }
+    }
+}
+
+Controls.prototype.moveElement = function( event ) {
+    var mouse = new THREE.Vector2(0,0);
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    this.rayCaster.setFromCamera(mouse, this.camera);
+    var intersection = this.rayCaster.ray
+        .intersectPlane(this.controlPointPlane);
+    this.editedElement.position.copy(intersection);
+    this.bezier.computeCurve();
+    
 }
 
 Controls.prototype.selectElements = function (event ) {
 
-    console.log("Select");
     var mouse = new THREE.Vector2(0,0);
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
@@ -116,7 +181,6 @@ Controls.prototype.selectElements = function (event ) {
         return BezierControlPoint.prototype.isPrototypeOf(intersection.object);
     });
     if (controlPoints.length > 0) {
-        console.log("Intersects");
         var newElement = controlPoints.sort((a,b) => {
             return a.distance - b.distance;
         })[0].object;
@@ -155,9 +219,9 @@ Controls.prototype.rotateCamera = function ( event ) {
 
     var length = rotationAxisView.length();
 
-    this.dragdistance += length;
+    this.mousemovedistance += length;
 
-    if (this.dragdistance < 0.3) {
+    if (this.mousemovedistance < 0.3) {
         return;
     }
 
