@@ -110,11 +110,14 @@ Controls.prototype.editControlPoint = function() {
     this.finishEdit();
     this.editedElement = this.elementUnderMouse;
     this.editedElement.edit();
-    this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
+    this.currentX = this.controlPointGUI.add(this.editedElement.position, "x")
+                                        .listen();
     this.currentX.onChange(v => this.bezier.computeCurve());
-    this.currentY = this.controlPointGUI.add(this.editedElement.position, "y");
+    this.currentY = this.controlPointGUI.add(this.editedElement.position, "y")
+                                        .listen();
     this.currentY.onChange(v => this.bezier.computeCurve());
-    this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z");
+    this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z")
+                                        .listen();
     this.currentZ.onChange(v => this.bezier.computeCurve());
     var controls = {
         remove: () => {
