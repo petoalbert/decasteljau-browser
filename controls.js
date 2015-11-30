@@ -32,18 +32,17 @@ function Controls(scene, canvas, camera, bezier, animation) {
         }
     };
 
-    var gui = new dat.GUI();
-    var segmentsController = gui.add(bezier, 'segments', 1);
+    this.gui = new dat.GUI();
+    var segmentsController = this.gui.add(bezier, 'segments', 1);
     segmentsController.onChange(val => bezier.computeCurve());
-    var axesGui = gui.addFolder("Helper axes");
+    var axesGui = this.gui.addFolder("Helper axes");
     axesGui.add(this.axesGroup, 'visible');
-    var animationGui = gui.addFolder('Animation');
+    var animationGui = this.gui.addFolder('Animation');
     animationGui.add(animation, 'duration', 1, 15);
     animationGui.add(controls, 'animate');
-    gui.add(controls, 'clear');
-    this.controlPointGUI = gui.addFolder('Control point');
-    gui.open();
-    this.gui = gui;
+    this.gui.add(controls, 'clear');
+    this.controlPointGUI = this.gui.addFolder('Control point');
+    this.gui.open();
 
     var self = this;
     canvas.addEventListener("wheel", e => self.onWheel(e), false);
