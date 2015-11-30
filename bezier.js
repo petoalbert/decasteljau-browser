@@ -20,6 +20,16 @@ BezierControlPoint.prototype.unselect = function() {
     this.geometry = new THREE.SphereGeometry(0.2,30,30);
 }
 
+BezierControlPoint.prototype.modify = function() {
+    this.material = new THREE.MeshBasicMaterial({ color: 0xaaff66 });
+    this.isEdited = true;
+}
+
+BezierControlPoint.prototype.finishEditing = function() {
+    this.material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    this.isEdited = false;
+}
+
 function BezierControlLine(points) {
 	var geometry = new THREE.Geometry();
     points.forEach(function(point, index, array) {
@@ -58,12 +68,15 @@ BezierCurve.prototype.reset = function() {
     this.init();
 }
 
-BezierCurve.prototype.setControlLine = function(controlLine) {
+BezierCurve.prototype.createControlLine = function() {
     if (this.controlLine) {
         this.remove(this.controlLine);
     }
-    this.controlLine = controlLine;
-    this.add(controlLine);
+    if (this.points.length > 1) {
+        this.controlLine = new BezierControlLine(
+                this.points.map(p => p.position));
+        this.add(this.controlLine);
+    }
 }
 
 BezierCurve.prototype.addPoint = function (controlPoint) {
@@ -71,19 +84,28 @@ BezierCurve.prototype.addPoint = function (controlPoint) {
 	this.add(point);
 	this.points.push(point);
 
-	if (this.points.length > 1) {
-        this.setControlLine(new BezierControlLine(
-                    this.points.map(p => p.position)));
-	}
-
 	this.computeCurve();
     return point;
 };
 
+BezierCurve.prototype.removePoint = function (controlPoint) {
+    this.points.splice(this.points.indexOf(controlPoint),1);
+    this.remove(controlPoint);
+
+    this.computeCurve();
+}
+
 
 BezierCurve.prototype.computeCurve = function () {
 	var self = this;
-	if (this.points.length < 2) return;
+    this.createControlLine();
+	if (this.points.length < 2) {
+        if (this.curve) {
+            this.remove(this.curve);
+            this.curve = null;
+            return;
+        }
+    }
 
 	if (this.curve) this.remove(this.curve);
 	

@@ -14,6 +14,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
     this.axesGroup = this.addAxes();
     scene.add(this.axesGroup);
     this.elementUnderMouse = null;
+    this.editedElement = null;
 
 
     this.mousemove = {
@@ -39,7 +40,9 @@ function Controls(scene, canvas, camera, bezier, animation) {
     animationGui.add(animation, 'duration', 1, 15);
     animationGui.add(controls, 'animate');
     gui.add(controls, 'clear');
+    this.currentObject = gui.addFolder('Current object');
     gui.open();
+    this.gui = gui;
 
     var self = this;
     canvas.addEventListener("wheel", e => self.onWheel(e), false);
@@ -74,9 +77,10 @@ Controls.prototype.onWheel = function( event ) {
 }
 
 Controls.prototype.onMouseUp = function( event ) {
+    this.draggedElement = false;
     this.mousedown = false;
     var mouse = new THREE.Vector2(0,0);
-    if (this.dragdistance < 0.1) {
+    if (!this.elementUnderMouse && this.dragdistance < 0.1) {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         this.rayCaster.setFromCamera(mouse, this.camera);
@@ -85,8 +89,8 @@ Controls.prototype.onMouseUp = function( event ) {
         var newElement = this.bezier.addPoint(intersection);
 
         newElement.select();
-        if (this.elementUnderCursor) this.elementUnderCursor.unselect();
-        this.elementUnderCursor = newElement;
+        if (this.elementUnderMouse) this.elementUnderMouse.unselect();
+        this.elementUnderMouse = newElement;
     }
 }
 
@@ -94,18 +98,71 @@ Controls.prototype.onMouseDown = function( event ) {
     this.mousedown = true;
     this.dragdistance = 0;
     this.mousemove.first = true;
+    if (this.elementUnderMouse && this.elementUnderMouse != this.editedElement) {
+        this.draggedelement = true;
+        if (this.editedElement) {
+            this.editedElement.finishEditing();
+            this.currentObject.remove(this.currentX);
+            this.currentObject.remove(this.currentY);
+            this.currentObject.remove(this.currentZ);
+            this.currentObject.remove(this.removeCurrent);
+            this.currentObject.close();
+        }
+        this.editedElement = this.elementUnderMouse;
+        this.editedElement.modify();
+        this.currentX = this.currentObject.add(this.editedElement.position, "x");
+        this.currentX.onChange(v => this.bezier.computeCurve());
+        this.currentY = this.currentObject.add(this.editedElement.position, "y");
+        this.currentY.onChange(v => this.bezier.computeCurve());
+        this.currentZ = this.currentObject.add(this.editedElement.position, "z");
+        this.currentZ.onChange(v => this.bezier.computeCurve());
+        var controls = {
+            remove: () => {
+                this.bezier.removePoint(this.editedElement);
+                this.currentObject.remove(this.currentX);
+                this.currentObject.remove(this.currentY);
+                this.currentObject.remove(this.currentZ);
+                this.currentObject.remove(this.removeCurrent);
+                this.currentObject.close();
+                this.editedElement = null;
+            }
+        }
+        this.removeCurrent = this.currentObject.add(controls, "remove");
+        this.currentObject.open();
+    }
 }
 
+
 Controls.prototype.onMouseMove = function( event ) {
-    this.selectElements( event );
-    if (this.mousedown) {
-        this.rotateCamera( event );
+    if (!this.draggedElement) {
+        this.selectElements( event );
     }
+    if (this.mousedown) {
+        if (this.elementUnderMouse && this.elementUnderMouse == this.editedElement) {
+            this.draggedElement = true;
+        }
+        if (this.draggedElement) {
+            this.moveElement( event );
+        } else {
+            this.rotateCamera( event );
+        }
+    }
+}
+
+Controls.prototype.moveElement = function( event ) {
+    var mouse = new THREE.Vector2(0,0);
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    this.rayCaster.setFromCamera(mouse, this.camera);
+    var intersection = this.rayCaster.ray
+        .intersectPlane(this.controlPointPlane);
+    this.editedElement.position.copy(intersection);
+    this.bezier.computeCurve();
+    
 }
 
 Controls.prototype.selectElements = function (event ) {
 
-    console.log("Select");
     var mouse = new THREE.Vector2(0,0);
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
@@ -116,7 +173,6 @@ Controls.prototype.selectElements = function (event ) {
         return BezierControlPoint.prototype.isPrototypeOf(intersection.object);
     });
     if (controlPoints.length > 0) {
-        console.log("Intersects");
         var newElement = controlPoints.sort((a,b) => {
             return a.distance - b.distance;
         })[0].object;
