@@ -6,9 +6,52 @@
 		<style>
 			body { margin: 0; overflow: hidden; }
 			canvas { width: 100%; height: 100%; }
+            .instructions { 
+                font: 11px "Lucida Grande",sans-serif;
+                color: white; 
+                background-color: transparent; 
+                position: fixed;
+                top: 10px;
+                width: 20%;
+                left: 10px;
+            }
+            .instructions a:link {
+                color: white;
+                text-decoration: underline;
+            }
+            .instructions a:visited {
+                color: white;
+                text-decoration: none;
+            }
+            .instructions a:hover {
+                color: rgb(200,200,200);
+                text-decoration: none;
+            }
+            .instructions a:active {
+                color: white;
+                text-decoration: none;
+            }
+            .instruction {
+                border-bottom: 1px dashed rgb(128,191,255);
+                padding-bottom: 5px;
+                padding-top: 5px;
+            }
 		</style>
 	</head>
 	<body>
+        <div class="instructions">
+            <div>
+            View source at <a
+                href="http://github.com/petoalbert/decasteljau-browser">github.com</a>
+            </div>
+            <div style="margin-top:10px">
+                <div class="instruction">Click on empty space to add points.</div>
+                <div class="instruction">Click on existing points and drag them or edit them at the
+                    right side.</div>
+                <div class="instruction">Click on empty space and move the mouse to rotate.</div>
+                <div class="instruction">Edit settings on the right side.</div>
+            </div>
+        </div>
 		<script src="three.min.js"></script>
         <script src="controlpoint.js"></script>
         <script src="controlline.js"></script>
