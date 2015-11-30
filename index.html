@@ -11,9 +11,9 @@
                 color: white; 
                 background-color: transparent; 
                 position: fixed;
-                //top: 20px;
-                width: 50%;
-                //left: 200px
+                top: 10px;
+                width: 20%;
+                left: 10px;
             }
             .instructions a:link {
                 color: white;
@@ -31,6 +31,11 @@
                 color: white;
                 text-decoration: none;
             }
+            .instruction {
+                border-bottom: 1px dashed rgb(128,191,255);
+                padding-bottom: 5px;
+                padding-top: 5px;
+            }
 		</style>
 	</head>
 	<body>
@@ -40,9 +45,11 @@
                 href="http://github.com/petoalbert/decasteljau-browser">github.com</a>
             </div>
             <div style="margin-top:10px">
-                Press CTRL to add points <br>
-                Drag the mouse on empty space to rotate <br>
-                Click on existing points to modify
+                <div class="instruction">Click on empty space to add points.</div>
+                <div class="instruction">Click on existing points and drag them or edit them at the
+                    right side.</div>
+                <div class="instruction">Click on empty space and move the mouse to rotate.</div>
+                <div class="instruction">Edit settings on the right side.</div>
             </div>
         </div>
 		<script src="three.min.js"></script>
