@@ -1,47 +1,5 @@
 /* global THREE */
 
-function BezierControlPoint(coords) {
-    var geometry = new THREE.SphereGeometry(0.2,30,30);
-    var material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    THREE.Mesh.call(this, geometry, material);
-    if (coords) {
-        this.position.copy(coords);
-    }
-}
-
-BezierControlPoint.prototype = Object.create(THREE.Mesh.prototype);
-BezierControlPoint.prototype.constructor = BezierControlPoint;
-
-BezierControlPoint.prototype.select = function() {
-    this.geometry = new THREE.SphereGeometry(0.5,30,30);
-}
-
-BezierControlPoint.prototype.unselect = function() {
-    this.geometry = new THREE.SphereGeometry(0.2,30,30);
-}
-
-BezierControlPoint.prototype.edit = function() {
-    this.material = new THREE.MeshBasicMaterial({ color: 0xaaff66 });
-    this.isEdited = true;
-}
-
-BezierControlPoint.prototype.finishEditing = function() {
-    this.material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    this.isEdited = false;
-}
-
-function BezierControlLine(points) {
-	var geometry = new THREE.Geometry();
-    points.forEach(function(point, index, array) {
-		geometry.vertices.push(point);
-	});
-	var material = new THREE.LineBasicMaterial({ color: 0x44ff33});
-    THREE.Line.call(this, geometry, material);
-}
-
-BezierControlLine.prototype = Object.create(THREE.Line.prototype);
-BezierControlLine.prototype.constructor = BezierControlLine;
-
 function BezierCurve() {
 
 	THREE.Group.call(this);

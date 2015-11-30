@@ -108,7 +108,7 @@ Controls.prototype.finishEdit = function() {
 Controls.prototype.editControlPoint = function() {
     this.finishEdit();
     this.editedElement = this.elementUnderMouse;
-    this.editedElement.modify();
+    this.editedElement.edit();
     this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
     this.currentX.onChange(v => this.bezier.computeCurve());
     this.currentY = this.controlPointGUI.add(this.editedElement.position, "y");
