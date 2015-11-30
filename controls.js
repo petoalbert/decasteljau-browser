@@ -10,7 +10,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
     this.rayCaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.controlPointPlane = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
-    this.axesGroup = addAxes();
+    this.axesGroup = this.addAxes();
     scene.add(this.axesGroup);
 
 
@@ -40,99 +40,98 @@ function Controls(scene, canvas, camera, bezier, animation) {
     gui.open();
 
     var self = this;
+    canvas.addEventListener("wheel", e => self.onWheel(e), false);
+    canvas.addEventListener("mousedown", e => self.onMouseDown(e), false);
+    canvas.addEventListener("mouseup", e => self.onMouseUp(e), false);
+    canvas.addEventListener("mousemove", e => self.onMouseMove(e), false);
+}
 
-    function addAxes(){
-        var axesGroup = new THREE.Group(); 
-        var origin = new THREE.Vector3(0,0,0);
-        var length = 6;
-        arrows = [ 
-        { color:0xff0000, dir:new THREE.Vector3(0,0,1) },
-        { color:0x00ff00, dir:new THREE.Vector3(0,1,0) },
-        { color:0x0000ff, dir:new THREE.Vector3(1,0,0) }
-        ];
-        arrows.forEach(params => {
-            var arrow = new THREE.ArrowHelper(params.dir,
-                        origin,
-                        length,
-                        params.color);
-            axesGroup.add(arrow);
-        });
-        return axesGroup;
+Controls.prototype.addAxes = function(){
+    var axesGroup = new THREE.Group(); 
+    var origin = new THREE.Vector3(0,0,0);
+    var length = 6;
+    arrows = [ 
+    { color:0xff0000, dir:new THREE.Vector3(0,0,1) },
+    { color:0x00ff00, dir:new THREE.Vector3(0,1,0) },
+    { color:0x0000ff, dir:new THREE.Vector3(1,0,0) }
+    ];
+    arrows.forEach(params => {
+        var arrow = new THREE.ArrowHelper(params.dir,
+                origin,
+                length,
+                params.color);
+        axesGroup.add(arrow);
+    });
+    return axesGroup;
+}
+
+Controls.prototype.onWheel = function( event ) {
+    var delta = -(event.deltaX + event.deltaY + event.deltaZ) / 100;
+    this.camera.zoom += delta;
+    this.camera.updateProjectionMatrix();
+}
+
+Controls.prototype.onMouseUp = function( event ) {
+    this.mousedown = false;
+    if (this.dragdistance < 0.1) {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        this.rayCaster.setFromCamera(this.mouse, this.camera);
+        var intersection = this.rayCaster.ray
+            .intersectPlane(this.controlPointPlane);
+        this.bezier.addPoint(intersection);
+    }
+}
+
+Controls.prototype.onMouseDown = function( event ) {
+    this.mousedown = true;
+    this.dragdistance = 0;
+    this.mouse.x = (event.clientX / window.innerWidth) * 2 -1;
+    this.mouse.y = - (event.clientY / window.innerHeight) * 2 +1;
+    this.mousemove.first = true;
+}
+
+Controls.prototype.onMouseMove = function( event ) {
+
+    if (!this.mousedown) return;
+
+    var newmouse = new THREE.Vector2(
+            (event.clientX / window.innerWidth) * 2 -1,
+            (event.clientY / window.innerHeight) * 2 +1);
+
+    if (this.mousemove.first) {
+        this.mousemove.first = false;
+        this.mousemove.pos.copy(newmouse);
+        return;
     }
 
-    self.onWheel = function( event ) {
-        var delta = -(event.deltaX + event.deltaY + event.deltaZ) / 100;
-        self.camera.zoom += delta;
-        self.camera.updateProjectionMatrix();
+    var rotationAxisView = new THREE.Vector3(
+            -(newmouse.y - this.mousemove.pos.y),
+            -(newmouse.x - this.mousemove.pos.x),
+            0);
+
+    var length = rotationAxisView.length();
+
+    this.dragdistance += length;
+
+    if (this.dragdistance < 0.3) {
+        return;
     }
 
-    self.onMouseUp = function( event ) {
-        self.mousedown = false;
-        if (self.dragdistance < 0.1) {
-            self.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            self.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-            self.rayCaster.setFromCamera(self.mouse, self.camera);
-            var intersection = self.rayCaster.ray
-                .intersectPlane(self.controlPointPlane);
-            self.bezier.addPoint(intersection);
-        }
-    }
+    this.mousemove.pos.copy(newmouse);
+    rotationAxisView.normalize();
 
-    self.onMouseDown = function( event ) {
-        self.mousedown = true;
-        self.dragdistance = 0;
-        self.mouse.x = (event.clientX / window.innerWidth) * 2 -1;
-        self.mouse.y = - (event.clientY / window.innerHeight) * 2 +1;
-        self.mousemove.first = true;
-    }
+    var rotation = new THREE.Matrix4();
+    rotation.extractRotation(this.camera.matrix);
+    rotationAxisView.applyMatrix4(rotation);
 
-    self.onMouseMove = function( event ) {
+    rotation.makeRotationAxis(rotationAxisView, 300*length*Math.PI/180);
+    this.camera.position.applyMatrix4(rotation);
+    this.camera.applyMatrix(rotation);
 
-        if (!self.mousedown) return;
-
-        var newmouse = new THREE.Vector2(
-                (event.clientX / window.innerWidth) * 2 -1,
-                (event.clientY / window.innerHeight) * 2 +1);
-
-        if (self.mousemove.first) {
-            self.mousemove.first = false;
-            self.mousemove.pos.copy(newmouse);
-            return;
-        }
-
-        var rotationAxisView = new THREE.Vector3(
-                -(newmouse.y - self.mousemove.pos.y),
-                -(newmouse.x - self.mousemove.pos.x),
-                0);
-
-        var length = rotationAxisView.length();
-
-        self.dragdistance += length;
-
-        if (self.dragdistance < 0.3) {
-            return;
-        }
-
-        self.mousemove.pos.copy(newmouse);
-        rotationAxisView.normalize();
-
-        var rotation = new THREE.Matrix4();
-        rotation.extractRotation(self.camera.matrix);
-        rotationAxisView.applyMatrix4(rotation);
-
-        rotation.makeRotationAxis(rotationAxisView, 300*length*Math.PI/180);
-        self.camera.position.applyMatrix4(rotation);
-        self.camera.applyMatrix(rotation);
-
-        self.controlPointPlane = new THREE.Plane(
-                camera.getWorldDirection(),
-                0);
-
-    }
-
-    canvas.addEventListener("wheel", this.onWheel, false);
-    canvas.addEventListener("mousedown", this.onMouseDown, false);
-    canvas.addEventListener("mouseup", this.onMouseUp, false);
-    canvas.addEventListener("mousemove", this.onMouseMove, false);
+    this.controlPointPlane = new THREE.Plane(
+            camera.getWorldDirection(),
+            0);
 
 }
+
