@@ -10,6 +10,9 @@ function Controls(scene, canvas, camera, bezier, animation) {
     this.rayCaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.controlPointPlane = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
+    this.axesGroup = addAxes();
+    scene.add(this.axesGroup);
+
 
     this.mousemove = {
         pos: new THREE.Vector2(),
@@ -28,6 +31,8 @@ function Controls(scene, canvas, camera, bezier, animation) {
     var gui = new dat.GUI();
     var segmentsController = gui.add(bezier, 'segments', 1);
     segmentsController.onChange(val => bezier.computeCurve());
+    var axesGui = gui.addFolder("Helper axes");
+    axesGui.add(this.axesGroup, 'visible');
     var animationGui = gui.addFolder('Animation');
     animationGui.add(animation, 'duration', 1, 15);
     animationGui.add(controls, 'animate');
@@ -35,6 +40,26 @@ function Controls(scene, canvas, camera, bezier, animation) {
     gui.open();
 
     var self = this;
+
+    function addAxes(){
+        var axesGroup = new THREE.Group(); 
+        var origin = new THREE.Vector3(0,0,0);
+        var length = 6;
+        arrows = [ 
+        { color:0xff0000, dir:new THREE.Vector3(0,0,1) },
+        { color:0x00ff00, dir:new THREE.Vector3(0,1,0) },
+        { color:0x0000ff, dir:new THREE.Vector3(1,0,0) }
+        ];
+        arrows.forEach(params => {
+            var arrow = new THREE.ArrowHelper(params.dir,
+                        origin,
+                        length,
+                        params.color);
+            axesGroup.add(arrow);
+        });
+        return axesGroup;
+    }
+
     self.onWheel = function( event ) {
         var delta = -(event.deltaX + event.deltaY + event.deltaZ) / 100;
         self.camera.zoom += delta;
