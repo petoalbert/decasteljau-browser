@@ -97,10 +97,8 @@ Controls.prototype.onMouseDown = function( event ) {
 }
 
 Controls.prototype.onMouseMove = function( event ) {
-
-    if (!this.mousedown) {
-        this.selectElements( event );
-    } else {
+    this.selectElements( event );
+    if (this.mousedown) {
         this.rotateCamera( event );
     }
 }
