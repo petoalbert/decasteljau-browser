@@ -73,10 +73,11 @@ Controls.prototype.onWheel = function( event ) {
 
 Controls.prototype.onMouseUp = function( event ) {
     this.mousedown = false;
+    var mouse = new THREE.Vector2(0,0);
     if (this.dragdistance < 0.1) {
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-        this.rayCaster.setFromCamera(this.mouse, this.camera);
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        this.rayCaster.setFromCamera(mouse, this.camera);
         var intersection = this.rayCaster.ray
             .intersectPlane(this.controlPointPlane);
         this.bezier.addPoint(intersection);
@@ -86,8 +87,6 @@ Controls.prototype.onMouseUp = function( event ) {
 Controls.prototype.onMouseDown = function( event ) {
     this.mousedown = true;
     this.dragdistance = 0;
-    this.mouse.x = (event.clientX / window.innerWidth) * 2 -1;
-    this.mouse.y = - (event.clientY / window.innerHeight) * 2 +1;
     this.mousemove.first = true;
 }
 
