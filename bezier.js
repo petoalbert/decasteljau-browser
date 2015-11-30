@@ -12,6 +12,14 @@ function BezierControlPoint(coords) {
 BezierControlPoint.prototype = Object.create(THREE.Mesh.prototype);
 BezierControlPoint.prototype.constructor = BezierControlPoint;
 
+BezierControlPoint.prototype.select = function() {
+    this.geometry = new THREE.SphereGeometry(0.5,30,30);
+}
+
+BezierControlPoint.prototype.unselect = function() {
+    this.geometry = new THREE.SphereGeometry(0.2,30,30);
+}
+
 function BezierControlLine(points) {
 	var geometry = new THREE.Geometry();
     points.forEach(function(point, index, array) {
@@ -69,7 +77,7 @@ BezierCurve.prototype.addPoint = function (controlPoint) {
 	}
 
 	this.computeCurve();
-
+    return point;
 };
 
 

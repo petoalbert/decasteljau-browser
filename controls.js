@@ -1,4 +1,5 @@
 /* global THREE */
+/* global BezierControlPoint */
 function Controls(scene, canvas, camera, bezier, animation) {
     this.scene = scene;
     this.camera = camera;
@@ -12,6 +13,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
     this.controlPointPlane = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
     this.axesGroup = this.addAxes();
     scene.add(this.axesGroup);
+    this.elementUnderMouse = null;
 
 
     this.mousemove = {
@@ -80,7 +82,11 @@ Controls.prototype.onMouseUp = function( event ) {
         this.rayCaster.setFromCamera(mouse, this.camera);
         var intersection = this.rayCaster.ray
             .intersectPlane(this.controlPointPlane);
-        this.bezier.addPoint(intersection);
+        var newElement = this.bezier.addPoint(intersection);
+
+        newElement.select();
+        if (this.elementUnderCursor) this.elementUnderCursor.unselect();
+        this.elementUnderCursor = newElement;
     }
 }
 
@@ -100,6 +106,35 @@ Controls.prototype.onMouseMove = function( event ) {
 }
 
 Controls.prototype.selectElements = function (event ) {
+
+    console.log("Select");
+    var mouse = new THREE.Vector2(0,0);
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    this.rayCaster.setFromCamera( mouse, this.camera );
+    var intersects = this.rayCaster.intersectObjects( this.bezier.children );
+
+    var controlPoints = intersects.filter((intersection,index,array) => {
+        return BezierControlPoint.prototype.isPrototypeOf(intersection.object);
+    });
+    if (controlPoints.length > 0) {
+        console.log("Intersects");
+        var newElement = controlPoints.sort((a,b) => {
+            return a.distance - b.distance;
+        })[0].object;
+
+        if (this.elementUnderMouse != newElement) {
+            if (this.elementUnderMouse) this.elementUnderMouse.unselect();
+            newElement.select();
+        }
+        this.elementUnderMouse = newElement; 
+    } else {
+        if (this.elementUnderMouse) {
+            this.elementUnderMouse.unselect();
+            this.elementUnderMouse = null;
+        }
+    }
+
 
 }
 
