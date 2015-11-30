@@ -20,7 +20,7 @@ BezierControlPoint.prototype.unselect = function() {
     this.geometry = new THREE.SphereGeometry(0.2,30,30);
 }
 
-BezierControlPoint.prototype.modify = function() {
+BezierControlPoint.prototype.edit = function() {
     this.material = new THREE.MeshBasicMaterial({ color: 0xaaff66 });
     this.isEdited = true;
 }
