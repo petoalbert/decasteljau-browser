@@ -113,14 +113,11 @@ Controls.prototype.editControlPoint = function() {
     this.finishEdit();
     this.editedElement = this.elementUnderMouse;
     this.editedElement.edit();
-    this.currentX = this.controlPointGUI.add(this.editedElement.position, "x")
-                                        .listen();
+    this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
     this.currentX.onChange(v => this.bezier.computeCurve());
-    this.currentY = this.controlPointGUI.add(this.editedElement.position, "y")
-                                        .listen();
+    this.currentY = this.controlPointGUI.add(this.editedElement.position, "y");
     this.currentY.onChange(v => this.bezier.computeCurve());
-    this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z")
-                                        .listen();
+    this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z");
     this.currentZ.onChange(v => this.bezier.computeCurve());
     var controls = {
         remove: () => {
@@ -172,6 +169,9 @@ Controls.prototype.moveElement = function( event ) {
     var intersection = this.rayCaster.ray
         .intersectPlane(this.controlPointPlane);
     this.editedElement.position.copy(intersection);
+    for (var i in this.controlPointGUI.__controllers) {
+        this.controlPointGUI.__controllers[i].updateDisplay();
+    }
     this.bezier.computeCurve();
     
 }
