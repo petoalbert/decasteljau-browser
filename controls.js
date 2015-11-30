@@ -31,6 +31,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
             animation.start();
         }
     };
+
     var gui = new dat.GUI();
     var segmentsController = gui.add(bezier, 'segments', 1);
     segmentsController.onChange(val => bezier.computeCurve());
@@ -40,7 +41,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
     animationGui.add(animation, 'duration', 1, 15);
     animationGui.add(controls, 'animate');
     gui.add(controls, 'clear');
-    this.currentObject = gui.addFolder('Current object');
+    this.controlPointGUI = gui.addFolder('Control point');
     gui.open();
     this.gui = gui;
 
@@ -102,33 +103,33 @@ Controls.prototype.onMouseDown = function( event ) {
         this.draggedelement = true;
         if (this.editedElement) {
             this.editedElement.finishEditing();
-            this.currentObject.remove(this.currentX);
-            this.currentObject.remove(this.currentY);
-            this.currentObject.remove(this.currentZ);
-            this.currentObject.remove(this.removeCurrent);
-            this.currentObject.close();
+            this.controlPointGUI.remove(this.currentX);
+            this.controlPointGUI.remove(this.currentY);
+            this.controlPointGUI.remove(this.currentZ);
+            this.controlPointGUI.remove(this.removeCurrent);
+            this.controlPointGUI.close();
         }
         this.editedElement = this.elementUnderMouse;
         this.editedElement.modify();
-        this.currentX = this.currentObject.add(this.editedElement.position, "x");
+        this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
         this.currentX.onChange(v => this.bezier.computeCurve());
-        this.currentY = this.currentObject.add(this.editedElement.position, "y");
+        this.currentY = this.controlPointGUI.add(this.editedElement.position, "y");
         this.currentY.onChange(v => this.bezier.computeCurve());
-        this.currentZ = this.currentObject.add(this.editedElement.position, "z");
+        this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z");
         this.currentZ.onChange(v => this.bezier.computeCurve());
         var controls = {
             remove: () => {
                 this.bezier.removePoint(this.editedElement);
-                this.currentObject.remove(this.currentX);
-                this.currentObject.remove(this.currentY);
-                this.currentObject.remove(this.currentZ);
-                this.currentObject.remove(this.removeCurrent);
-                this.currentObject.close();
+                this.controlPointGUI.remove(this.currentX);
+                this.controlPointGUI.remove(this.currentY);
+                this.controlPointGUI.remove(this.currentZ);
+                this.controlPointGUI.remove(this.removeCurrent);
+                this.controlPointGUI.close();
                 this.editedElement = null;
             }
         }
-        this.removeCurrent = this.currentObject.add(controls, "remove");
-        this.currentObject.open();
+        this.removeCurrent = this.controlPointGUI.add(controls, "remove");
+        this.controlPointGUI.open();
     }
 }
 
