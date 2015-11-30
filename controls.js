@@ -7,7 +7,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
     this.animation = animation;
 
     this.mousedown = false;
-    this.dragdistance = 0;
+    this.mousemovedistance = 0;
     this.rayCaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.controlPointPlane = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
@@ -80,7 +80,7 @@ Controls.prototype.onMouseUp = function( event ) {
     this.draggedElement = false;
     this.mousedown = false;
     var mouse = new THREE.Vector2(0,0);
-    if (!this.elementUnderMouse && this.dragdistance < 0.1) {
+    if (!this.elementUnderMouse && this.mousemovedistance < 0.1) {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         this.rayCaster.setFromCamera(mouse, this.camera);
@@ -94,41 +94,49 @@ Controls.prototype.onMouseUp = function( event ) {
     }
 }
 
-Controls.prototype.onMouseDown = function( event ) {
-    this.mousedown = true;
-    this.dragdistance = 0;
-    this.mousemove.first = true;
-    if (this.elementUnderMouse && this.elementUnderMouse != this.editedElement) {
-        this.draggedelement = true;
-        if (this.editedElement) {
-            this.editedElement.finishEditing();
+Controls.prototype.finishEdit = function() {
+    if (this.editedElement) {
+        this.editedElement.finishEditing();
+        this.controlPointGUI.remove(this.currentX);
+        this.controlPointGUI.remove(this.currentY);
+        this.controlPointGUI.remove(this.currentZ);
+        this.controlPointGUI.remove(this.removeCurrent);
+        this.controlPointGUI.close();
+    }
+}
+
+Controls.prototype.editControlPoint = function() {
+    this.finishEdit();
+    this.editedElement = this.elementUnderMouse;
+    this.editedElement.modify();
+    this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
+    this.currentX.onChange(v => this.bezier.computeCurve());
+    this.currentY = this.controlPointGUI.add(this.editedElement.position, "y");
+    this.currentY.onChange(v => this.bezier.computeCurve());
+    this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z");
+    this.currentZ.onChange(v => this.bezier.computeCurve());
+    var controls = {
+        remove: () => {
+            this.bezier.removePoint(this.editedElement);
             this.controlPointGUI.remove(this.currentX);
             this.controlPointGUI.remove(this.currentY);
             this.controlPointGUI.remove(this.currentZ);
             this.controlPointGUI.remove(this.removeCurrent);
             this.controlPointGUI.close();
+            this.editedElement = null;
         }
-        this.editedElement = this.elementUnderMouse;
-        this.editedElement.modify();
-        this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
-        this.currentX.onChange(v => this.bezier.computeCurve());
-        this.currentY = this.controlPointGUI.add(this.editedElement.position, "y");
-        this.currentY.onChange(v => this.bezier.computeCurve());
-        this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z");
-        this.currentZ.onChange(v => this.bezier.computeCurve());
-        var controls = {
-            remove: () => {
-                this.bezier.removePoint(this.editedElement);
-                this.controlPointGUI.remove(this.currentX);
-                this.controlPointGUI.remove(this.currentY);
-                this.controlPointGUI.remove(this.currentZ);
-                this.controlPointGUI.remove(this.removeCurrent);
-                this.controlPointGUI.close();
-                this.editedElement = null;
-            }
-        }
-        this.removeCurrent = this.controlPointGUI.add(controls, "remove");
-        this.controlPointGUI.open();
+    }
+    this.removeCurrent = this.controlPointGUI.add(controls, "remove");
+    this.controlPointGUI.open();
+}
+
+Controls.prototype.onMouseDown = function( event ) {
+    this.mousedown = true;
+    this.mousemovedistance = 0;
+    this.mousemove.first = true;
+    if (this.elementUnderMouse && this.elementUnderMouse != this.editedElement) {
+        this.draggedelement = true;
+        this.editControlPoint();
     }
 }
 
@@ -211,9 +219,9 @@ Controls.prototype.rotateCamera = function ( event ) {
 
     var length = rotationAxisView.length();
 
-    this.dragdistance += length;
+    this.mousemovedistance += length;
 
-    if (this.dragdistance < 0.3) {
+    if (this.mousemovedistance < 0.3) {
         return;
     }
 
