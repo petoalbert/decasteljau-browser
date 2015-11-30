@@ -23,11 +23,12 @@ function Controls(scene, canvas, camera, bezier, animation) {
     };
 
     var controls = {
-        clear: function() { 
+        clear: () => { 
             animation.stop()
             bezier.reset()
+            this.finishEdit();
         },
-        animate: function() {
+        animate: () => {
             animation.start();
         }
     };
