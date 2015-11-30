@@ -93,7 +93,18 @@ Controls.prototype.onMouseDown = function( event ) {
 
 Controls.prototype.onMouseMove = function( event ) {
 
-    if (!this.mousedown) return;
+    if (!this.mousedown) {
+        this.selectElements( event );
+    } else {
+        this.rotateCamera( event );
+    }
+}
+
+Controls.prototype.selectElements = function (event ) {
+
+}
+
+Controls.prototype.rotateCamera = function ( event ) {
 
     var newmouse = new THREE.Vector2(
             (event.clientX / window.innerWidth) * 2 -1,
