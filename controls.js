@@ -39,7 +39,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
     segmentsController.onChange(function(){bezier.computeCurve()});
     var appearanceGUI = this.gui.addFolder("Appearance");
     var cpRadius = appearanceGUI.add(bezier, "pointRadius");
-    cpRadius.onChange(function(){bezier.recreatePoints});
+    cpRadius.onChange(function(){bezier.recreatePoints()});
     var axesGui = appearanceGUI.addFolder("Helper axes");
     axesGui.add(this.axesGroup, 'visible');
     var animationGui = this.gui.addFolder('Animation');
