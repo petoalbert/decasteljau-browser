@@ -120,10 +120,10 @@ Controls.prototype.finishEdit = function() {
     }
 }
 
-Controls.prototype.editControlPoint = function() {
+Controls.prototype.editControlPoint = function(cp) {
     var self = this;
     this.finishEdit();
-    this.editedElement = this.elementUnderMouse;
+    this.editedElement = cp;
     this.editedElement.edit();
     this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
     this.currentX.onChange(function(){self.bezier.computeCurve()});
@@ -148,7 +148,7 @@ Controls.prototype.onMouseDown = function( event ) {
     this.mousemove.first = true;
     if (this.elementUnderMouse && this.elementUnderMouse != this.editedElement) {
         this.draggedelement = true;
-        this.editControlPoint();
+        this.editControlPoint(this.elementUnderMouse);
     }
 }
 
