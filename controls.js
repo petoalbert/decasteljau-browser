@@ -103,11 +103,15 @@ Controls.prototype.finishEdit = function() {
         this.editedElement.finishEditing();
         // Assume that controls are either removed together or none of them
         // is removed.
-        if (this.controlPointGUI["x"]) {
+        if (this.currentX) {
             this.controlPointGUI.remove(this.currentX);
             this.controlPointGUI.remove(this.currentY);
             this.controlPointGUI.remove(this.currentZ);
             this.controlPointGUI.remove(this.removeCurrent);
+            this.currentX = null;
+            this.currentY = null;
+            this.currentZ = null;
+            this.removeCurrent = null;
         }
         this.controlPointGUI.close();
     }
@@ -126,12 +130,8 @@ Controls.prototype.editControlPoint = function() {
     this.currentZ.onChange(function(){self.bezier.computeCurve()});
     var controls = {
         remove: function() {
+            self.finishEdit();
             self.bezier.removePoint(self.editedElement);
-            self.controlPointGUI.remove(self.currentX);
-            self.controlPointGUI.remove(self.currentY);
-            self.controlPointGUI.remove(self.currentZ);
-            self.controlPointGUI.remove(self.removeCurrent);
-            self.controlPointGUI.close();
             self.editedElement = null;
         }
     }
