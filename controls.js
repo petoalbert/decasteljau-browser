@@ -76,6 +76,7 @@ Controls.prototype.addAxes = function(){
 
 Controls.prototype.onWheel = function( event ) {
     var delta = -(event.deltaX + event.deltaY + event.deltaZ) / 100;
+    if (camera.zoom + delta < 0.5) return;
     this.camera.zoom += delta;
     this.camera.updateProjectionMatrix();
 }
