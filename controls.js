@@ -101,10 +101,14 @@ Controls.prototype.onMouseUp = function( event ) {
 Controls.prototype.finishEdit = function() {
     if (this.editedElement) {
         this.editedElement.finishEditing();
-        this.controlPointGUI.remove(this.currentX);
-        this.controlPointGUI.remove(this.currentY);
-        this.controlPointGUI.remove(this.currentZ);
-        this.controlPointGUI.remove(this.removeCurrent);
+        // Assume that controls are either removed together or none of them
+        // is removed.
+        if (this.controlPointGUI["x"]) {
+            this.controlPointGUI.remove(this.currentX);
+            this.controlPointGUI.remove(this.currentY);
+            this.controlPointGUI.remove(this.currentZ);
+            this.controlPointGUI.remove(this.removeCurrent);
+        }
         this.controlPointGUI.close();
     }
 }
