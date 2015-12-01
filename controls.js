@@ -22,20 +22,21 @@ function Controls(scene, canvas, camera, bezier, animation) {
         first: true
     };
 
+    var self=this;
     var controls = {
-        clear: () => { 
-            animation.stop()
-            bezier.reset()
-            this.finishEdit();
+        clear: function() { 
+            animation.stop();
+            self.finishEdit();
+            bezier.reset();
         },
-        animate: () => {
+        animate: function() {
             animation.start();
         }
     };
 
     this.gui = new dat.GUI();
     var segmentsController = this.gui.add(bezier, 'segments', 1);
-    segmentsController.onChange(val => bezier.computeCurve());
+    segmentsController.onChange(function(){bezier.computeCurve()});
     var axesGui = this.gui.addFolder("Helper axes");
     axesGui.add(this.axesGroup, 'visible');
     var animationGui = this.gui.addFolder('Animation');
@@ -46,22 +47,24 @@ function Controls(scene, canvas, camera, bezier, animation) {
     this.gui.open();
 
     var self = this;
-    canvas.addEventListener("wheel", e => self.onWheel(e), false);
-    canvas.addEventListener("mousedown", e => self.onMouseDown(e), false);
-    canvas.addEventListener("mouseup", e => self.onMouseUp(e), false);
-    canvas.addEventListener("mousemove", e => self.onMouseMove(e), false);
+    canvas.addEventListener("wheel", function(e){self.onWheel(e)}, false);
+    canvas.addEventListener("mousedown", 
+                            function(e){self.onMouseDown(e)},false);
+    canvas.addEventListener("mouseup", function(e){self.onMouseUp(e)}, false);
+    canvas.addEventListener("mousemove", 
+                            function(e){self.onMouseMove(e)}, false);
 }
 
 Controls.prototype.addAxes = function(){
     var axesGroup = new THREE.Group(); 
     var origin = new THREE.Vector3(0,0,0);
     var length = 6;
-    arrows = [ 
+    var arrows = [ 
     { color:0xff0000, dir:new THREE.Vector3(0,0,1) },
     { color:0x00ff00, dir:new THREE.Vector3(0,1,0) },
     { color:0x0000ff, dir:new THREE.Vector3(1,0,0) }
     ];
-    arrows.forEach(params => {
+    arrows.forEach(function(params) {
         var arrow = new THREE.ArrowHelper(params.dir,
                 origin,
                 length,
@@ -107,24 +110,25 @@ Controls.prototype.finishEdit = function() {
 }
 
 Controls.prototype.editControlPoint = function() {
+    var self = this;
     this.finishEdit();
     this.editedElement = this.elementUnderMouse;
     this.editedElement.edit();
     this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
-    this.currentX.onChange(v => this.bezier.computeCurve());
+    this.currentX.onChange(function(){self.bezier.computeCurve()});
     this.currentY = this.controlPointGUI.add(this.editedElement.position, "y");
-    this.currentY.onChange(v => this.bezier.computeCurve());
+    this.currentY.onChange(function(){self.bezier.computeCurve()});
     this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z");
-    this.currentZ.onChange(v => this.bezier.computeCurve());
+    this.currentZ.onChange(function(){self.bezier.computeCurve()});
     var controls = {
-        remove: () => {
-            this.bezier.removePoint(this.editedElement);
-            this.controlPointGUI.remove(this.currentX);
-            this.controlPointGUI.remove(this.currentY);
-            this.controlPointGUI.remove(this.currentZ);
-            this.controlPointGUI.remove(this.removeCurrent);
-            this.controlPointGUI.close();
-            this.editedElement = null;
+        remove: function() {
+            self.bezier.removePoint(self.editedElement);
+            self.controlPointGUI.remove(self.currentX);
+            self.controlPointGUI.remove(self.currentY);
+            self.controlPointGUI.remove(self.currentZ);
+            self.controlPointGUI.remove(self.removeCurrent);
+            self.controlPointGUI.close();
+            self.editedElement = null;
         }
     }
     this.removeCurrent = this.controlPointGUI.add(controls, "remove");
@@ -181,11 +185,11 @@ Controls.prototype.selectElements = function (event ) {
     this.rayCaster.setFromCamera( mouse, this.camera );
     var intersects = this.rayCaster.intersectObjects( this.bezier.children );
 
-    var controlPoints = intersects.filter((intersection,index,array) => {
+    var controlPoints = intersects.filter(function(intersection) {
         return BezierControlPoint.prototype.isPrototypeOf(intersection.object);
     });
     if (controlPoints.length > 0) {
-        var newElement = controlPoints.sort((a,b) => {
+        var newElement = controlPoints.sort(function(a,b) {
             return a.distance - b.distance;
         })[0].object;
 
@@ -200,8 +204,6 @@ Controls.prototype.selectElements = function (event ) {
             this.elementUnderMouse = null;
         }
     }
-
-
 }
 
 Controls.prototype.rotateCamera = function ( event ) {
@@ -241,7 +243,7 @@ Controls.prototype.rotateCamera = function ( event ) {
     this.camera.applyMatrix(rotation);
 
     this.controlPointPlane = new THREE.Plane(
-            camera.getWorldDirection(),
+            this.camera.getWorldDirection(),
             0);
 
 }
