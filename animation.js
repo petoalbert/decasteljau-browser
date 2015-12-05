@@ -12,7 +12,8 @@ DeCasteljauAnimation.prototype.constructor = DeCasteljauAnimation;
 
 DeCasteljauAnimation.prototype.reset = function() {
     var linenum = this.linenumFromBezier();
-    this.lines.forEach((l,i,a) => this.remove(l));
+    var self = this;
+    this.lines.forEach(function(l){self.remove(l)});
     this.lines = []
     var currentcolor = new THREE.Color(0x44ff33);
     var step = new THREE.Color(1-currentcolor.r,
@@ -52,11 +53,14 @@ DeCasteljauAnimation.prototype.update = function(t) {
         this.reset();
     }
     this.visible = true;
-    var geometry = this.bezier.points.map((p,i,a) => p.position);
+    var geometry = this.bezier.points.map(function(p){
+        return p.position
+    });
     for (var i=0; i<this.lines.length; i++) {
         geometry = this.bezier.deCasteljau(geometry, t, true);
-        geometry.forEach((coords,j,a) => {
-            this.lines[i].geometry.vertices[j] = coords.clone();
+        var self = this;
+        geometry.forEach(function(coords,j,a){
+            self.lines[i].geometry.vertices[j] = coords.clone();
         });
         this.lines[i].geometry.verticesNeedUpdate = true;
     }
