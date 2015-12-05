@@ -1,3 +1,5 @@
+/* global BezierControlPoint */
+/* global BezierControlLine */
 /* global THREE */
 
 function BezierCurve() {
@@ -32,7 +34,7 @@ BezierCurve.prototype.createControlLine = function() {
     }
     if (this.points.length > 1) {
         this.controlLine = new BezierControlLine(
-                this.points.map(p => p.position));
+                this.points.map(function(p) {return p.position}));
         this.add(this.controlLine);
     }
 }
@@ -55,7 +57,6 @@ BezierCurve.prototype.removePoint = function (controlPoint) {
 
 
 BezierCurve.prototype.computeCurve = function () {
-	var self = this;
     this.createControlLine();
 	if (this.points.length < 2) {
         if (this.curve) {
@@ -72,7 +73,8 @@ BezierCurve.prototype.computeCurve = function () {
 	for (var i = 0; i <= this.segments; i += 1) {
         var t = i/this.segments;
 		geometry.vertices.push(
-                this.deCasteljau(this.points.map(p => p.position),t)
+                this.deCasteljau(this.points.map(function(p){
+                    return p.position}),t)
         );
 	}
 
@@ -113,15 +115,19 @@ DeCasteljauAnimation.prototype.constructor = DeCasteljauAnimation;
 
 DeCasteljauAnimation.prototype.reset = function() {
     var linenum = this.linenumFromBezier();
-    this.lines.forEach((l,i,a) => this.remove(l));
+    var self = this;
+    this.lines.forEach(function(l){self.remove(l)});
     this.lines = []
     var currentcolor = new THREE.Color(0x44ff33);
     var step = new THREE.Color(1-currentcolor.r,
                                1-currentcolor.g,
                                1-currentcolor.b).multiplyScalar(1/linenum);
+    var geometry;
+    var material;                           
+    var line;                           
     for (var i=0; i<linenum; i++) {
         geometry = new THREE.Geometry();
-        for (var j=0; j<bezier.points.length-i-1; j++) {
+        for (var j=0; j<this.bezier.points.length-i-1; j++) {
            geometry.vertices.push(new THREE.Vector3(0,0,0));
         } 
         material = new THREE.LineBasicMaterial( {color: currentcolor.getHex()} );
@@ -134,7 +140,7 @@ DeCasteljauAnimation.prototype.reset = function() {
 }
 
 DeCasteljauAnimation.prototype.linenumFromBezier = function(){
-    return bezier.points.length-2;
+    return this.bezier.points.length-2;
 }
 
 DeCasteljauAnimation.prototype.updateAnimation = function() {
@@ -149,15 +155,16 @@ DeCasteljauAnimation.prototype.updateAnimation = function() {
 }
 
 DeCasteljauAnimation.prototype.update = function(t) {
+    var self = this;
     if (this.linenumFromBezier() != this.lines.length) {
         this.reset();
     }
     this.visible = true;
-    var geometry = this.bezier.points.map((p,i,a) => p.position);
+    var geometry = this.bezier.points.map(function(p){return p.position});
     for (var i=0; i<this.lines.length; i++) {
         geometry = this.bezier.deCasteljau(geometry, t, true);
-        geometry.forEach((coords,j,a) => {
-            this.lines[i].geometry.vertices[j] = coords.clone();
+        geometry.forEach(function(coords,j) {
+            self.lines[i].geometry.vertices[j] = coords.clone();
         });
         this.lines[i].geometry.verticesNeedUpdate = true;
     }
