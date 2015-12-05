@@ -41,6 +41,18 @@ function Controls(scene, canvas, camera, bezier, animation) {
     axesGui.add(this.axesGroup, 'visible');
     var animationGui = this.gui.addFolder('Animation');
     animationGui.add(animation, 'duration', 1, 15);
+    /*
+     * dat.gui does not handle manually setting the step size well, but it can 
+     * determine a good step size based on the initial value 
+     */
+    animation.t = 0.33;
+    var parameterSlider = animationGui.add(animation, 't', 0, 1).listen();
+    animation.t = 0;
+    parameterSlider.onChange(function(v){
+        animation.stop();
+        animation.t = v;
+        animation.update();
+    });
     animationGui.add(controls, 'animate');
     this.gui.add(controls, 'clear');
     this.controlPointGUI = this.gui.addFolder('Control point');
@@ -91,6 +103,7 @@ Controls.prototype.onMouseUp = function( event ) {
         var intersection = this.rayCaster.ray
             .intersectPlane(this.controlPointPlane);
         var newElement = this.bezier.addPoint(intersection);
+        this.animation.update();
 
         newElement.select();
         if (this.elementUnderMouse) this.elementUnderMouse.unselect();
@@ -123,15 +136,25 @@ Controls.prototype.editControlPoint = function() {
     this.editedElement = this.elementUnderMouse;
     this.editedElement.edit();
     this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
-    this.currentX.onChange(function(){self.bezier.computeCurve()});
+    this.currentX.onChange(function(){
+        self.bezier.computeCurve();
+        self.animation.update()
+    });
     this.currentY = this.controlPointGUI.add(this.editedElement.position, "y");
-    this.currentY.onChange(function(){self.bezier.computeCurve()});
+    this.currentY.onChange(function(){
+        self.bezier.computeCurve();
+        self.animation.update()
+    });
     this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z");
-    this.currentZ.onChange(function(){self.bezier.computeCurve()});
+    this.currentZ.onChange(function(){
+        self.bezier.computeCurve();
+        self.animation.update()
+    });
     var controls = {
         remove: function() {
             self.finishEdit();
             self.bezier.removePoint(self.editedElement);
+            self.animation.update();
             self.editedElement = null;
         }
     }
@@ -178,6 +201,7 @@ Controls.prototype.moveElement = function( event ) {
         this.controlPointGUI.__controllers[i].updateDisplay();
     }
     this.bezier.computeCurve();
+    this.animation.update();
     
 }
 

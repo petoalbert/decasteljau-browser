@@ -1,10 +1,13 @@
 function DeCasteljauAnimation(bezier, duration) {
     THREE.Group.call(this);
     this.duration = duration;
+    this.remainingDuration = duration;
     this.bezier = bezier;
     this.clock = new THREE.Clock(false);
     this.lines = []
     this.reset();
+    this.t = 0;
+    this.tStart = 0;
 }
 
 DeCasteljauAnimation.prototype = Object.create(THREE.Group.prototype);
@@ -39,16 +42,16 @@ DeCasteljauAnimation.prototype.linenumFromBezier = function(){
 
 DeCasteljauAnimation.prototype.updateAnimation = function() {
     if (!this.clock.running) return;
-    var t = this.clock.getElapsedTime() / this.duration;
-    if (t > 1) {
+    this.t = this.tStart + this.clock.getElapsedTime() / this.duration;
+    if (this.t > 1) {
         this.visible = false;
         this.stop();
     } else {
-        this.update(t);
+        this.update();
     }
 }
 
-DeCasteljauAnimation.prototype.update = function(t) {
+DeCasteljauAnimation.prototype.update = function() {
     if (this.linenumFromBezier() != this.lines.length) {
         this.reset();
     }
@@ -57,7 +60,7 @@ DeCasteljauAnimation.prototype.update = function(t) {
         return p.position
     });
     for (var i=0; i<this.lines.length; i++) {
-        geometry = this.bezier.deCasteljau(geometry, t, true);
+        geometry = this.bezier.deCasteljau(geometry, this.t, true);
         var self = this;
         geometry.forEach(function(coords,j,a){
             self.lines[i].geometry.vertices[j] = coords.clone();
@@ -66,12 +69,14 @@ DeCasteljauAnimation.prototype.update = function(t) {
     }
 }
 
+
 DeCasteljauAnimation.prototype.stop = function(){
     this.clock.stop();
     this.visible = false;
 }
 
-DeCasteljauAnimation.prototype.start = function(duration) {
+DeCasteljauAnimation.prototype.start = function() {
+    this.tStart = this.t;
     this.clock = new THREE.Clock(true);
     this.clock.start();
 }
