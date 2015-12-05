@@ -69,7 +69,8 @@ BezierCurve.prototype.computeCurve = function () {
 	
 	var geometry = new THREE.Geometry();
 	var material = new THREE.LineBasicMaterial({ color: 0xff3399 });
-	for (var t = 0; t < 1; t += 1 / this.segments) {
+	for (var i = 0; i <= this.segments; i += 1) {
+        var t = i/this.segments;
 		geometry.vertices.push(
                 this.deCasteljau(this.points.map(p => p.position),t)
         );
