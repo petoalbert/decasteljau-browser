@@ -138,14 +138,6 @@ Controls.prototype.editControlPoint = function(cp) {
     this.editedElement = cp;
     this.editedElement.edit();
     this.currentX = this.controlPointGUI.add(this.editedElement.position, "x");
-
-    this.currentX.onChange(function(){self.bezier.computeCurve()});
-    this.currentY = this.controlPointGUI.add(this.editedElement.position, "y");
-
-    this.currentY.onChange(function(){self.bezier.computeCurve()});
-    this.currentZ = this.controlPointGUI.add(this.editedElement.position, "z");
-
-    this.currentZ.onChange(function(){self.bezier.computeCurve()});
     this.currentX.step(0.1);
     this.currentX.onChange(function(){
         self.bezier.computeCurve();
