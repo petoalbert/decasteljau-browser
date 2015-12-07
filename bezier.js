@@ -29,7 +29,7 @@ BezierCurve.prototype.reset = function() {
     this.init();
 }
 
-BezierCurve.prototype.recreatePoints = function() {
+BezierCurve.prototype.scalePoints = function() {
     var self = this;
     this.points.forEach(function(p) {
         p.setScale(self.pointAppearance.scale);
