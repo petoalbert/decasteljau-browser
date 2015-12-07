@@ -17,6 +17,7 @@ BezierCurve.prototype.init = function() {
 	this.controlLine;
 	this.segments = 100;
 	this.curve = null;
+    this.pointAppearance = {scale:1}; 
 }
 
 BezierCurve.prototype.reset = function() {
@@ -26,6 +27,13 @@ BezierCurve.prototype.reset = function() {
         self.remove(child);
     });
     this.init();
+}
+
+BezierCurve.prototype.recreatePoints = function() {
+    var self = this;
+    this.points.forEach(function(p) {
+        p.setScale(self.pointAppearance.scale);
+    });
 }
 
 BezierCurve.prototype.createControlLine = function() {
@@ -40,7 +48,7 @@ BezierCurve.prototype.createControlLine = function() {
 }
 
 BezierCurve.prototype.addPoint = function (controlPoint) {
-	var point = new BezierControlPoint(controlPoint);
+	var point = new BezierControlPoint(controlPoint, this.pointAppearance.scale);
 	this.add(point);
 	this.points.push(point);
 

@@ -37,7 +37,12 @@ function Controls(scene, canvas, camera, bezier, animation) {
     this.gui = new dat.GUI();
     var segmentsController = this.gui.add(bezier, 'segments', 1);
     segmentsController.onChange(function(){bezier.computeCurve()});
-    var axesGui = this.gui.addFolder("Helper axes");
+    var appearanceGUI = this.gui.addFolder("Appearance");
+    var pointAppearanceGUI = appearanceGUI.addFolder("Control points");
+    var cpScale = pointAppearanceGUI.add(bezier.pointAppearance, "scale");
+    cpScale.min(0.01);
+    cpScale.onChange(function(){bezier.scalePoints()});
+    var axesGui = appearanceGUI.addFolder("Helper axes");
     axesGui.add(this.axesGroup, 'visible');
     var animationGui = this.gui.addFolder('Animation');
     animationGui.add(animation, 'duration', 1, 15);
