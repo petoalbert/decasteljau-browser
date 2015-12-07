@@ -48,7 +48,6 @@ function DeCasteljauAnimation(bezier, duration) {
     this.add(this.linesGroup);
     this.reset();
     this.frenetSerretFrame = new FrenetSerretFrame();
-    this.frenetSerretFrame.visible = false;
     this.add(this.frenetSerretFrame);
     this.t = 0;
     this.tStart = 0;
@@ -71,7 +70,7 @@ DeCasteljauAnimation.prototype.reset = function() {
     var line;                           
     for (var i=0; i<linenum; i++) {
         geometry = new THREE.Geometry();
-        for (var j=0; j<this.bezier.points.length-i-1; j++) {
+        for (var j=0; j<this.bezier.points.length-i; j++) {
            geometry.vertices.push(new THREE.Vector3(0,0,0));
         } 
         material = new THREE.LineBasicMaterial( {color: currentcolor.getHex()} );
@@ -84,7 +83,7 @@ DeCasteljauAnimation.prototype.reset = function() {
 }
 
 DeCasteljauAnimation.prototype.linenumFromBezier = function(){
-    return this.bezier.points.length-2;
+    return this.bezier.points.length-1;
 }
 
 DeCasteljauAnimation.prototype.updateAnimation = function() {
@@ -108,7 +107,6 @@ DeCasteljauAnimation.prototype.update = function() {
     this.visible = true;
     var geometry = this.bezier.points.map(function(p){return p.position});
     for (var i=0; i<this.lines.length; i++) {
-        geometry = this.bezier.deCasteljau(geometry, this.t, true);
         geometry.forEach(function(coords,j) {
             self.lines[i].geometry.vertices[j] = coords.clone();
         });
@@ -123,12 +121,12 @@ DeCasteljauAnimation.prototype.update = function() {
                 );
                 break;
         }
+        geometry = this.bezier.deCasteljau(geometry, this.t, true);
     }
     if (this.lines.length > 1) {
-        this.frenetSerretFrame.visible = true;
         this.frenetSerretFrame.setDirections(derivateDirs);
     } else {
-        this.frenetSerretFrame.visible = false;
+        this.visible = false;
     }
     this.frenetSerretFrame.position.copy(this.bezier.deCasteljau(geometry, this.t, false));
 }
