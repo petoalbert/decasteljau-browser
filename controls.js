@@ -56,6 +56,8 @@ function Controls(scene, canvas, camera, bezier, animation) {
     animationGui.add(controls, 'animate');
     var frenetSerretGUI = animationGui.addFolder('Frenet-Serret frame');
     frenetSerretGUI.add(animation.frenetSerretFrame, 'visible').listen();
+    var helperLinesGUI = animationGui.addFolder('Helper lines');
+    helperLinesGUI.add(animation.linesGroup, 'visible').listen();
     this.gui.add(controls, 'clear');
     this.controlPointGUI = this.gui.addFolder('Control point');
     this.gui.open();

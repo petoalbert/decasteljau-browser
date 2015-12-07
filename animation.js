@@ -44,6 +44,8 @@ function DeCasteljauAnimation(bezier, duration) {
     this.bezier = bezier;
     this.clock = new THREE.Clock(false);
     this.lines = []
+    this.linesGroup = new THREE.Group();
+    this.add(this.linesGroup);
     this.reset();
     this.frenetSerretFrame = new FrenetSerretFrame();
     this.frenetSerretFrame.visible = false;
@@ -58,7 +60,7 @@ DeCasteljauAnimation.prototype.constructor = DeCasteljauAnimation;
 DeCasteljauAnimation.prototype.reset = function() {
     var linenum = this.linenumFromBezier();
     var self = this;
-    this.lines.forEach(function(l){self.remove(l)});
+    this.lines.forEach(function(l){self.linesGroup.remove(l)});
     this.lines = []
     var currentcolor = new THREE.Color(0x44ff33);
     var step = new THREE.Color(1-currentcolor.r,
@@ -76,7 +78,7 @@ DeCasteljauAnimation.prototype.reset = function() {
         currentcolor.add(step);
         line = new THREE.Line(geometry, material);
         this.lines.push(line);
-        this.add(line);
+        this.linesGroup.add(line);
     }
     this.visible = false;
 }
