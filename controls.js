@@ -111,7 +111,11 @@ Controls.prototype.onMouseUp = function( event ) {
         this.rayCaster.setFromCamera(mouse, this.camera);
         var intersection = this.rayCaster.ray
             .intersectPlane(this.controlPointPlane);
-        var newElement = this.bezier.addPoint(intersection);
+        var newElement = this.bezier.addPoint(
+                intersection.applyQuaternion(
+                    this.scene.quaternion.clone().inverse()
+                )
+        );
         this.animation.update();
 
         newElement.select();
@@ -196,7 +200,7 @@ Controls.prototype.onMouseMove = function( event ) {
         if (this.draggedElement) {
             this.moveElement( event );
         } else {
-            this.rotateCamera( event );
+            this.rotateSceneWithMouse( event );
         }
     }
 }
@@ -208,7 +212,9 @@ Controls.prototype.moveElement = function( event ) {
     this.rayCaster.setFromCamera(mouse, this.camera);
     var intersection = this.rayCaster.ray
         .intersectPlane(this.controlPointPlane);
-    this.editedElement.position.copy(intersection);
+    this.editedElement.position.copy(intersection.applyQuaternion(
+        this.scene.quaternion.clone().inverse()
+    ));
     for (var i in this.controlPointGUI.__controllers) {
         this.controlPointGUI.__controllers[i].updateDisplay();
     }
@@ -246,7 +252,7 @@ Controls.prototype.selectElements = function (event ) {
     }
 }
 
-Controls.prototype.rotateCamera = function ( event ) {
+Controls.prototype.rotateSceneWithMouse = function ( event ) {
 
     var newmouse = new THREE.Vector2(
             (event.clientX / window.innerWidth) * 2 -1,
@@ -259,8 +265,8 @@ Controls.prototype.rotateCamera = function ( event ) {
     }
 
     var rotationAxisView = new THREE.Vector3(
-            -(newmouse.y - this.mousemove.pos.y),
-            -(newmouse.x - this.mousemove.pos.x),
+            (newmouse.y - this.mousemove.pos.y),
+            (newmouse.x - this.mousemove.pos.x),
             0);
 
     var length = rotationAxisView.length();
@@ -274,17 +280,7 @@ Controls.prototype.rotateCamera = function ( event ) {
     this.mousemove.pos.copy(newmouse);
     rotationAxisView.normalize();
 
-    var rotation = new THREE.Matrix4();
-    rotation.extractRotation(this.camera.matrix);
-    rotationAxisView.applyMatrix4(rotation);
-
-    rotation.makeRotationAxis(rotationAxisView, 300*length*Math.PI/180);
-    this.camera.position.applyMatrix4(rotation);
-    this.camera.applyMatrix(rotation);
-
-    this.controlPointPlane = new THREE.Plane(
-            this.camera.getWorldDirection(),
-            0);
-
+    rotationAxisView.applyQuaternion(this.scene.quaternion.clone().inverse());
+    this.scene.rotateOnAxis(rotationAxisView, 300*length*Math.PI/180);
 }
 
