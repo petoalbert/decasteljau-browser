@@ -1,3 +1,5 @@
+/* global THREE */
+
 function FrenetSerretFrame() {
     THREE.Group.call(this);
     var origin = new THREE.Vector3(0,0,0);
@@ -25,6 +27,15 @@ function FrenetSerretFrame() {
 
 FrenetSerretFrame.prototype = Object.create(THREE.Group.prototype);
 FrenetSerretFrame.prototype.constructor = FrenetSerretFrame;
+
+FrenetSerretFrame.prototype.setDirections = function(derivateDirs) {
+    var tangent = derivateDirs[0].clone().normalize();
+    var binormal = derivateDirs[0].clone().cross(derivateDirs[1]).normalize();
+    var normal = binormal.clone().cross(tangent).normalize();
+    this.xArrow.setDirection(tangent);
+    this.yArrow.setDirection(normal);
+    this.zArrow.setDirection(binormal);
+}
 
 function DeCasteljauAnimation(bezier, duration) {
     THREE.Group.call(this);
@@ -83,6 +94,7 @@ DeCasteljauAnimation.prototype.updateAnimation = function() {
 
 DeCasteljauAnimation.prototype.update = function(t) {
     var self = this;
+    var derivateDirs = [];
     if (this.linenumFromBezier() != this.lines.length) {
         this.reset();
     }
@@ -94,7 +106,18 @@ DeCasteljauAnimation.prototype.update = function(t) {
             self.lines[i].geometry.vertices[j] = coords.clone();
         });
         this.lines[i].geometry.verticesNeedUpdate = true;
+        switch (i) {
+            case this.lines.length-1: 
+                derivateDirs[0] = geometry[1].clone().sub(geometry[0]);
+                break;
+            case this.lines.length-2: 
+                derivateDirs[1] = geometry[2].clone().sub(
+                    geometry[1].clone().multiplyScalar(2).add(geometry[0])
+                );
+                break;
+        }
     }
+    this.frenetSerretFrame.setDirections(derivateDirs);
     this.frenetSerretFrame.position.copy(this.bezier.deCasteljau(geometry, t, false));
 }
 
