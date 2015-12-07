@@ -123,7 +123,6 @@ DeCasteljauAnimation.prototype.update = function() {
         }
     }
     if (this.lines.length > 1) {
-        console.log("Hello :)");
         this.frenetSerretFrame.visible = true;
         this.frenetSerretFrame.setDirections(derivateDirs);
     } else {
