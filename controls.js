@@ -38,8 +38,10 @@ function Controls(scene, canvas, camera, bezier, animation) {
     var segmentsController = this.gui.add(bezier, 'segments', 1);
     segmentsController.onChange(function(){bezier.computeCurve()});
     var appearanceGUI = this.gui.addFolder("Appearance");
-    var cpRadius = appearanceGUI.add(bezier, "pointRadius");
-    cpRadius.onChange(function(){bezier.recreatePoints()});
+    var pointAppearanceGUI = appearanceGUI.addFolder("Control points");
+    var cpScale = pointAppearanceGUI.add(bezier.pointAppearance, "scale");
+    cpScale.min(0.01);
+    cpScale.onChange(function(){bezier.scalePoints()});
     var axesGui = appearanceGUI.addFolder("Helper axes");
     axesGui.add(this.axesGroup, 'visible');
     var animationGui = this.gui.addFolder('Animation');
