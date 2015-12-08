@@ -117,29 +117,28 @@ DeCasteljauAnimation.prototype.update = function() {
     }
     this.visible = true;
     var geometry = this.bezier.points.map(function(p){return p.position});
-    for (var i=0; i<this.lines.length; i++) {
+    this.lines.forEach(function(line,i) {
         geometry.forEach(function(coords,j) {
-            self.lines[i].geometry.vertices[j] = coords.clone();
+            line.geometry.vertices[j] = coords.clone();
         });
-        this.lines[i].geometry.verticesNeedUpdate = true;
+        line.geometry.verticesNeedUpdate = true;
         switch (i) {
-            case this.lines.length-1: 
+            case self.lines.length-1: 
                 derivateDirs[0] = geometry[1].clone().sub(geometry[0]);
                 break;
-            case this.lines.length-2: 
+            case self.lines.length-2: 
                 derivateDirs[1] = geometry[2].clone().sub(
                     geometry[1].clone().multiplyScalar(2).add(geometry[0])
                 );
                 break;
         }
-        geometry = this.bezier.deCasteljau(geometry, this.t, true);
-    }
+        geometry = self.bezier.deCasteljau(geometry, self.t, true);
+    });
     if (this.lines.length > 1) {
         this.frenetSerretFrame.setDirections(derivateDirs);
     } else {
         this.visible = false;
     }
-    this.frenetSerretFrame.setDirections(derivateDirs);
     this.frenetSerretFrame.position.copy(this.bezier.deCasteljau(geometry, this.t, false));
 }
 
