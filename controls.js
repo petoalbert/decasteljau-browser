@@ -71,6 +71,11 @@ function Controls(scene, canvas, camera, bezier, animation) {
     cpScale.onChange(function(){bezier.scalePoints()});
     var axesGui = appearanceGUI.addFolder("Helper axes");
     axesGui.add(this.axesGroup, 'visible');
+    var frenetSerretGUI = appearanceGUI.addFolder('Frenet-Serret frame');
+    frenetSerretGUI.add(animation.frenetSerretFrame, 'visible').listen();
+    var helperLinesGUI = appearanceGUI.addFolder('Helper lines');
+    helperLinesGUI.add(animation.linesGroup, 'visible').listen();
+
     var animationGui = this.gui.addFolder('Animation');
     var speedGUI = animationGui.add(animation, 'speed', 1, 50);
     speedGUI.onChange(function(){animation.speedChanged()});
@@ -102,11 +107,6 @@ function Controls(scene, canvas, camera, bezier, animation) {
         animation.t = v;
         animation.update();
     });
-    var frenetSerretGUI = animationGui.addFolder('Frenet-Serret frame');
-    frenetSerretGUI.add(animation.frenetSerretFrame, 'visible').listen();
-    var helperLinesGUI = animationGui.addFolder('Helper lines');
-    helperLinesGUI.add(animation.linesGroup, 'visible').listen();
-    this.gui.add(controls, 'clear');
     this.controlPointGUI = this.gui.addFolder('Control point');
     this.planeGUI = this.gui.addFolder('Select plane');
     var planeFunctions = {
@@ -129,6 +129,9 @@ function Controls(scene, canvas, camera, bezier, animation) {
     this.planeGUI.add(planeFunctions, "XY");
     this.planeGUI.add(planeFunctions, "ZY");
     this.planeGUI.add(planeFunctions, "XZ");
+
+    this.gui.add(controls, 'clear');
+
     this.gui.open();
 
     var self = this;
