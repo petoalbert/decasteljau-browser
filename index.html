@@ -81,15 +81,16 @@
 			
 			camera.position.z = 30;
 			
-			render();
-			
 			var canvas = renderer.domElement;
             controls = new Controls(scene, canvas, camera, bezier, animation)
+
+			render();
 		}
 		
 		function render() {
 			requestAnimationFrame( render );
             animation.updateAnimation();
+            controls.update();
 			renderer.render( scene, camera );
 		}
 			
