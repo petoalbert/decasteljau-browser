@@ -1,6 +1,7 @@
 /* global THREE */
 /* global BezierControlPoint */
 function Controls(scene, canvas, camera, bezier, animation) {
+    var self=this;
     this.scene = scene;
     this.camera = camera;
     this.bezier = bezier;
@@ -15,15 +16,42 @@ function Controls(scene, canvas, camera, bezier, animation) {
     scene.add(this.axesGroup);
     this.elementUnderMouse = null;
     this.editedElement = null;
-    this.clock = new THREE.Clock();
 
+    this.selectedPlane = {
+        euler: new THREE.Euler(0,0,0),
+        clock: new THREE.Clock(),
+        start: function() {
+            var sp = self.selectedPlane;
+            sp.clock = new THREE.Clock();
+            sp.clock.start();
+        },
+        update: function() {
+            var sp = self.selectedPlane;
+            if (!sp.clock.running) return;
+            var t = sp.clock.getElapsedTime() / sp.duration;
+            if (t > 1) {
+                self.scene.rotation.copy(sp.euler);
+                self.scene.updateMatrix();
+                sp.clock.stop();
+            } else {
+                var q = new THREE.Quaternion();
+                q.setFromEuler(self.scene.rotation);
+                var qPlane = new THREE.Quaternion();
+                qPlane.setFromEuler(sp.euler);
+                q.slerp(qPlane, t);
+                self.scene.rotation.setFromQuaternion(q);
+            } 
+
+        },
+        duration: 1 // seconds
+
+    }
 
     this.mousemove = {
         pos: new THREE.Vector2(),
         first: true
     };
 
-    var self=this;
     var controls = {
         clear: function() { 
             animation.stop();
@@ -32,15 +60,6 @@ function Controls(scene, canvas, camera, bezier, animation) {
         },
         animate: function() {
             animation.start();
-        },
-        setplane: function() {
-            //var front = new THREE.Euler(0,0,0);
-            var front = new THREE.Quaternion();
-            front.setFromEuler(new THREE.Euler(0,0,0));
-            //front.multiply(self.scene.quaternion.clone().inverse());
-            self.scene.rotation.setFromQuaternion(front);
-            //self.scene.rotation.copy(front);
-            self.scene.updateMatrix();
         }
     };
 
@@ -75,24 +94,23 @@ function Controls(scene, canvas, camera, bezier, animation) {
     var helperLinesGUI = animationGui.addFolder('Helper lines');
     helperLinesGUI.add(animation.linesGroup, 'visible').listen();
     this.gui.add(controls, 'clear');
-    this.gui.add(controls, 'setplane');
     this.controlPointGUI = this.gui.addFolder('Control point');
     this.planeGUI = this.gui.addFolder('Select plane');
     var planeFunctions = {
         XY: function() {
             var euler = new THREE.Euler(0,0,0);
-            self.selectedPlane = euler;
-            self.startRotation();
+            self.selectedPlane.euler = euler;
+            self.selectedPlane.start();
         },
         ZY: function() {
             var euler = new THREE.Euler(0,Math.PI/2,0);
-            self.selectedPlane = euler;
-            self.startRotation();
+            self.selectedPlane.euler = euler;
+            self.selectedPlane.start();
         },
         XZ: function() {
             var euler = new THREE.Euler(0,Math.PI/2,Math.PI/2);
-            self.selectedPlane = euler;
-            self.startRotation();
+            self.selectedPlane.euler = euler;
+            self.selectedPlane.start();
         },
     }
     this.planeGUI.add(planeFunctions, "XY");
@@ -110,26 +128,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
 }
 
 Controls.prototype.update = function() {
-    if (!this.clock.running) return;
-    var t = this.clock.getElapsedTime() / this.duration;
-    if (t > 1) {
-        this.scene.rotation.copy(this.selectedPlane);
-        this.scene.updateMatrix();
-        this.clock.stop();
-    } else {
-        var q = new THREE.Quaternion();
-        q.setFromEuler(this.scene.rotation);
-        var qPlane = new THREE.Quaternion();
-        qPlane.setFromEuler(this.selectedPlane);
-        q.slerp(qPlane, t);
-        this.scene.rotation.setFromQuaternion(q);
-    } 
-}
-
-Controls.prototype.startRotation = function() {
-    this.clock = new THREE.Clock();
-    this.clock.start();
-    this.duration = 1;
+    this.selectedPlane.update();
 }
 
 Controls.prototype.addAxes = function(){
