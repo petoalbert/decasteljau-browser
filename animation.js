@@ -63,7 +63,7 @@ DeCasteljauAnimation.prototype.reset = function() {
     var self = this;
     this.lines.forEach(function(l){self.linesGroup.remove(l)});
     this.lines = []
-    var currentcolor = new THREE.Color(0x44ff33);
+    var currentcolor = new THREE.Color(0xffff);
     var step = new THREE.Color(1-currentcolor.r,
                                1-currentcolor.g,
                                1-currentcolor.b).multiplyScalar(1/linenum);
