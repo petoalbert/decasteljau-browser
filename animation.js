@@ -37,10 +37,10 @@ FrenetSerretFrame.prototype.setDirections = function(derivateDirs) {
     this.zArrow.setDirection(binormal);
 }
 
-function DeCasteljauAnimation(bezier, duration) {
+function DeCasteljauAnimation(bezier, speed) {
     THREE.Group.call(this);
-    this.duration = duration;
-    this.remainingDuration = duration;
+    this.baseDuration = 10; // seconds
+    this.speed = speed;
     this.bezier = bezier;
     this.clock = new THREE.Clock(false);
     this.lines = []
@@ -51,6 +51,7 @@ function DeCasteljauAnimation(bezier, duration) {
     this.add(this.frenetSerretFrame);
     this.t = 0;
     this.tStart = 0;
+    this.parameterAdjustment = 0;
 }
 
 DeCasteljauAnimation.prototype = Object.create(THREE.Group.prototype);
@@ -86,9 +87,18 @@ DeCasteljauAnimation.prototype.linenumFromBezier = function(){
     return this.bezier.points.length-1;
 }
 
+DeCasteljauAnimation.prototype.speedChanged = function() {
+    if (this.clock.running) {
+        var tNew = this.tStart + 
+            (this.speed/10) * this.clock.getElapsedTime() / this.baseDuration;
+        this.parameterAdjustment = this.t-tNew;
+    }
+}
+
 DeCasteljauAnimation.prototype.updateAnimation = function() {
     if (!this.clock.running) return;
-    this.t = this.tStart + this.clock.getElapsedTime() / this.duration;
+    this.t = this.tStart + this.parameterAdjustment + 
+        (this.speed/10) * this.clock.getElapsedTime() / this.baseDuration;
     if (this.t > 1) {
         this.visible = false;
         this.stop();
@@ -98,7 +108,6 @@ DeCasteljauAnimation.prototype.updateAnimation = function() {
 }
 
 DeCasteljauAnimation.prototype.update = function() {
-
     var self = this;
     var derivateDirs = [];
     if (this.linenumFromBezier() != this.lines.length) {
@@ -128,17 +137,21 @@ DeCasteljauAnimation.prototype.update = function() {
     } else {
         this.visible = false;
     }
+    this.frenetSerretFrame.setDirections(derivateDirs);
     this.frenetSerretFrame.position.copy(this.bezier.deCasteljau(geometry, this.t, false));
 }
 
 DeCasteljauAnimation.prototype.stop = function(){
     this.clock.stop();
     this.visible = false;
+    this.parameterAdjustment = 0;
 }
 
 DeCasteljauAnimation.prototype.start = function() {
     this.tStart = this.t;
     this.clock = new THREE.Clock(true);
+    this.parameterAdjustment = 0;
+    this.t = 0;
     this.clock.start();
 }
 

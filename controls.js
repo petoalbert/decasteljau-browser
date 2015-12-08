@@ -45,7 +45,8 @@ function Controls(scene, canvas, camera, bezier, animation) {
     var axesGui = appearanceGUI.addFolder("Helper axes");
     axesGui.add(this.axesGroup, 'visible');
     var animationGui = this.gui.addFolder('Animation');
-    animationGui.add(animation, 'duration', 1, 15);
+    var speedGUI = animationGui.add(animation, 'speed', 1, 50);
+    speedGUI.onChange(function(){animation.speedChanged()});
     /*
      * dat.gui does not handle manually setting the step size well, but it can 
      * determine a good step size based on the initial value 
