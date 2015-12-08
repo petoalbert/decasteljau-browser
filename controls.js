@@ -28,9 +28,6 @@ function Controls(scene, canvas, camera, bezier, animation) {
             animation.stop();
             self.finishEdit();
             bezier.reset();
-        },
-        animate: function() {
-            animation.start();
         }
     };
 
@@ -54,12 +51,27 @@ function Controls(scene, canvas, camera, bezier, animation) {
     animation.t = 0.33;
     var parameterSlider = animationGui.add(animation, 't', 0, 1).listen();
     animation.t = 0;
+    var animateCheckbox = animationGui.add(animation, 'play').listen();
+    animateCheckbox.onChange(function(animate) {
+        if (animate) {
+            animation.start();
+        } else {
+            animation.stop();
+        }
+    });
     parameterSlider.onChange(function(v){
         animation.stop();
+        /*
+         * The dat.gui implementation does not handle the valueChange event
+         * initiated from outside the gui, so set the value by hand to trigger
+         * the onChange listener method of the animateCheckbox. If this line
+         * wouldn't be here, the next click would not change its value to
+         * true.
+         */
+        animateCheckbox.setValue(false);
         animation.t = v;
         animation.update();
     });
-    animationGui.add(controls, 'animate');
     var frenetSerretGUI = animationGui.addFolder('Frenet-Serret frame');
     frenetSerretGUI.add(animation.frenetSerretFrame, 'visible').listen();
     var helperLinesGUI = animationGui.addFolder('Helper lines');

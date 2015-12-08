@@ -52,6 +52,7 @@ function DeCasteljauAnimation(bezier, speed) {
     this.t = 0;
     this.tStart = 0;
     this.parameterAdjustment = 0;
+    this.play = false;
 }
 
 DeCasteljauAnimation.prototype = Object.create(THREE.Group.prototype);
@@ -100,8 +101,9 @@ DeCasteljauAnimation.prototype.updateAnimation = function() {
     this.t = this.tStart + this.parameterAdjustment + 
         (this.speed/10) * this.clock.getElapsedTime() / this.baseDuration;
     if (this.t > 1) {
-        this.visible = false;
         this.stop();
+        this.t = 0;
+        this.start();
     } else {
         this.update();
     }
@@ -143,11 +145,12 @@ DeCasteljauAnimation.prototype.update = function() {
 
 DeCasteljauAnimation.prototype.stop = function(){
     this.clock.stop();
-    this.visible = false;
+    this.play = false;
     this.parameterAdjustment = 0;
 }
 
 DeCasteljauAnimation.prototype.start = function() {
+    this.play = true;
     this.tStart = this.t;
     this.clock = new THREE.Clock(true);
     this.parameterAdjustment = 0;
