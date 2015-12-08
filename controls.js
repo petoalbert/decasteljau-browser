@@ -40,7 +40,8 @@ function Controls(scene, canvas, camera, bezier, animation) {
     var axesGui = this.gui.addFolder("Helper axes");
     axesGui.add(this.axesGroup, 'visible');
     var animationGui = this.gui.addFolder('Animation');
-    animationGui.add(animation, 'duration', 1, 15);
+    var speedGUI = animationGui.add(animation, 'speed', 1, 50);
+    speedGUI.onChange(function(){animation.speedChanged()});
     animationGui.add(controls, 'animate');
     var frenetSerretGUI = animationGui.addFolder('Frenet-Serret frame');
     frenetSerretGUI.add(animation.frenetSerretFrame, 'visible');

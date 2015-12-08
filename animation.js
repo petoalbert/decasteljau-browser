@@ -37,15 +37,18 @@ FrenetSerretFrame.prototype.setDirections = function(derivateDirs) {
     this.zArrow.setDirection(binormal);
 }
 
-function DeCasteljauAnimation(bezier, duration) {
+function DeCasteljauAnimation(bezier, speed) {
     THREE.Group.call(this);
-    this.duration = duration;
+    this.baseDuration = 10; // seconds
+    this.speed = speed;
     this.bezier = bezier;
     this.clock = new THREE.Clock(false);
     this.lines = []
     this.reset();
     this.frenetSerretFrame = new FrenetSerretFrame();
     this.add(this.frenetSerretFrame);
+    this.t = 0;
+    this.parameterAdjustment = 0;
 }
 
 DeCasteljauAnimation.prototype = Object.create(THREE.Group.prototype);
@@ -81,18 +84,25 @@ DeCasteljauAnimation.prototype.linenumFromBezier = function(){
     return this.bezier.points.length-2;
 }
 
+DeCasteljauAnimation.prototype.speedChanged = function() {
+    var tNew = 
+        (this.speed/10) * this.clock.getElapsedTime() / this.baseDuration;
+    this.parameterAdjustment = this.t-tNew;
+}
+
 DeCasteljauAnimation.prototype.updateAnimation = function() {
     if (!this.clock.running) return;
-    var t = this.clock.getElapsedTime() / this.duration;
-    if (t > 1) {
+    this.t = this.parameterAdjustment + 
+        (this.speed/10) * this.clock.getElapsedTime() / this.baseDuration;
+    if (this.t > 1) {
         this.visible = false;
         this.stop();
     } else {
-        this.update(t);
+        this.update();
     }
 }
 
-DeCasteljauAnimation.prototype.update = function(t) {
+DeCasteljauAnimation.prototype.update = function() {
     var self = this;
     var derivateDirs = [];
     if (this.linenumFromBezier() != this.lines.length) {
@@ -101,7 +111,7 @@ DeCasteljauAnimation.prototype.update = function(t) {
     this.visible = true;
     var geometry = this.bezier.points.map(function(p){return p.position});
     for (var i=0; i<this.lines.length; i++) {
-        geometry = this.bezier.deCasteljau(geometry, t, true);
+        geometry = this.bezier.deCasteljau(geometry, this.t, true);
         geometry.forEach(function(coords,j) {
             self.lines[i].geometry.vertices[j] = coords.clone();
         });
@@ -118,7 +128,7 @@ DeCasteljauAnimation.prototype.update = function(t) {
         }
     }
     this.frenetSerretFrame.setDirections(derivateDirs);
-    this.frenetSerretFrame.position.copy(this.bezier.deCasteljau(geometry, t, false));
+    this.frenetSerretFrame.position.copy(this.bezier.deCasteljau(geometry, this.t, false));
 }
 
 DeCasteljauAnimation.prototype.stop = function(){
@@ -126,8 +136,10 @@ DeCasteljauAnimation.prototype.stop = function(){
     this.visible = false;
 }
 
-DeCasteljauAnimation.prototype.start = function(duration) {
+DeCasteljauAnimation.prototype.start = function() {
     this.clock = new THREE.Clock(true);
+    this.parameterAdjustment = 0;
+    this.t = 0;
     this.clock.start();
 }
 
