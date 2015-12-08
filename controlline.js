@@ -5,7 +5,7 @@ function BezierControlLine(points) {
     points.forEach(function(point, index, array) {
 		geometry.vertices.push(point);
 	});
-	var material = new THREE.LineBasicMaterial({ color: 0x44ff33});
+	var material = new THREE.LineBasicMaterial({ color: 0xffff});
     THREE.Line.call(this, geometry, material);
 }
 
