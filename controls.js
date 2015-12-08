@@ -28,6 +28,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
             animation.stop();
             self.finishEdit();
             bezier.reset();
+            animation.reset();
         }
     };
 
