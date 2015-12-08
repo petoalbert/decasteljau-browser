@@ -15,6 +15,7 @@ function Controls(scene, canvas, camera, bezier, animation) {
     scene.add(this.axesGroup);
     this.elementUnderMouse = null;
     this.editedElement = null;
+    this.clock = new THREE.Clock();
 
 
     this.mousemove = {
@@ -31,6 +32,15 @@ function Controls(scene, canvas, camera, bezier, animation) {
         },
         animate: function() {
             animation.start();
+        },
+        setplane: function() {
+            //var front = new THREE.Euler(0,0,0);
+            var front = new THREE.Quaternion();
+            front.setFromEuler(new THREE.Euler(0,0,0));
+            //front.multiply(self.scene.quaternion.clone().inverse());
+            self.scene.rotation.setFromQuaternion(front);
+            //self.scene.rotation.copy(front);
+            self.scene.updateMatrix();
         }
     };
 
@@ -58,13 +68,36 @@ function Controls(scene, canvas, camera, bezier, animation) {
         animation.t = v;
         animation.update();
     });
+
     animationGui.add(controls, 'animate');
     var frenetSerretGUI = animationGui.addFolder('Frenet-Serret frame');
     frenetSerretGUI.add(animation.frenetSerretFrame, 'visible').listen();
     var helperLinesGUI = animationGui.addFolder('Helper lines');
     helperLinesGUI.add(animation.linesGroup, 'visible').listen();
     this.gui.add(controls, 'clear');
+    this.gui.add(controls, 'setplane');
     this.controlPointGUI = this.gui.addFolder('Control point');
+    this.planeGUI = this.gui.addFolder('Select plane');
+    var planeFunctions = {
+        XY: function() {
+            var euler = new THREE.Euler(0,0,0);
+            self.selectedPlane = euler;
+            self.startRotation();
+        },
+        ZY: function() {
+            var euler = new THREE.Euler(0,Math.PI/2,0);
+            self.selectedPlane = euler;
+            self.startRotation();
+        },
+        XZ: function() {
+            var euler = new THREE.Euler(0,Math.PI/2,Math.PI/2);
+            self.selectedPlane = euler;
+            self.startRotation();
+        },
+    }
+    this.planeGUI.add(planeFunctions, "XY");
+    this.planeGUI.add(planeFunctions, "ZY");
+    this.planeGUI.add(planeFunctions, "XZ");
     this.gui.open();
 
     var self = this;
@@ -74,6 +107,29 @@ function Controls(scene, canvas, camera, bezier, animation) {
     canvas.addEventListener("mouseup", function(e){self.onMouseUp(e)}, false);
     canvas.addEventListener("mousemove", 
                             function(e){self.onMouseMove(e)}, false);
+}
+
+Controls.prototype.update = function() {
+    if (!this.clock.running) return;
+    var t = this.clock.getElapsedTime() / this.duration;
+    if (t > 1) {
+        this.scene.rotation.copy(this.selectedPlane);
+        this.scene.updateMatrix();
+        this.clock.stop();
+    } else {
+        var q = new THREE.Quaternion();
+        q.setFromEuler(this.scene.rotation);
+        var qPlane = new THREE.Quaternion();
+        qPlane.setFromEuler(this.selectedPlane);
+        q.slerp(qPlane, t);
+        this.scene.rotation.setFromQuaternion(q);
+    } 
+}
+
+Controls.prototype.startRotation = function() {
+    this.clock = new THREE.Clock();
+    this.clock.start();
+    this.duration = 1;
 }
 
 Controls.prototype.addAxes = function(){
