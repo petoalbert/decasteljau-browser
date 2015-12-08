@@ -1,6 +1,7 @@
 /* global THREE */
 /* global BezierControlPoint */
 function Controls(scene, canvas, camera, bezier, animation) {
+    var self=this;
     this.scene = scene;
     this.camera = camera;
     this.bezier = bezier;
@@ -16,21 +17,47 @@ function Controls(scene, canvas, camera, bezier, animation) {
     this.elementUnderMouse = null;
     this.editedElement = null;
 
+    this.selectedPlane = {
+        euler: new THREE.Euler(0,0,0),
+        clock: new THREE.Clock(),
+        start: function() {
+            var sp = self.selectedPlane;
+            sp.clock = new THREE.Clock();
+            sp.clock.start();
+        },
+        update: function() {
+            var sp = self.selectedPlane;
+            if (!sp.clock.running) return;
+            var t = sp.clock.getElapsedTime() / sp.duration;
+            if (t > 1) {
+                self.scene.rotation.copy(sp.euler);
+                self.scene.updateMatrix();
+                sp.clock.stop();
+            } else {
+                var q = new THREE.Quaternion();
+                q.setFromEuler(self.scene.rotation);
+                var qPlane = new THREE.Quaternion();
+                qPlane.setFromEuler(sp.euler);
+                q.slerp(qPlane, t);
+                self.scene.rotation.setFromQuaternion(q);
+            } 
+
+        },
+        duration: 1 // seconds
+
+    }
 
     this.mousemove = {
         pos: new THREE.Vector2(),
         first: true
     };
 
-    var self=this;
     var controls = {
         clear: function() { 
             animation.stop();
             self.finishEdit();
             bezier.reset();
-        },
-        animate: function() {
-            animation.start();
+            animation.reset();
         }
     };
 
@@ -38,12 +65,15 @@ function Controls(scene, canvas, camera, bezier, animation) {
     var segmentsController = this.gui.add(bezier, 'segments', 1);
     segmentsController.onChange(function(){bezier.computeCurve()});
     var appearanceGUI = this.gui.addFolder("Appearance");
-    var cpRadius = appearanceGUI.add(bezier, "pointRadius");
-    cpRadius.onChange(function(){bezier.recreatePoints()});
+    var pointAppearanceGUI = appearanceGUI.addFolder("Control points");
+    var cpScale = pointAppearanceGUI.add(bezier.pointAppearance, "scale");
+    cpScale.min(0.01);
+    cpScale.onChange(function(){bezier.scalePoints()});
     var axesGui = appearanceGUI.addFolder("Helper axes");
     axesGui.add(this.axesGroup, 'visible');
     var animationGui = this.gui.addFolder('Animation');
-    animationGui.add(animation, 'duration', 1, 15);
+    var speedGUI = animationGui.add(animation, 'speed', 1, 50);
+    speedGUI.onChange(function(){animation.speedChanged()});
     /*
      * dat.gui does not handle manually setting the step size well, but it can 
      * determine a good step size based on the initial value 
@@ -51,18 +81,54 @@ function Controls(scene, canvas, camera, bezier, animation) {
     animation.t = 0.33;
     var parameterSlider = animationGui.add(animation, 't', 0, 1).listen();
     animation.t = 0;
+    var animateCheckbox = animationGui.add(animation, 'play').listen();
+    animateCheckbox.onChange(function(animate) {
+        if (animate) {
+            animation.start();
+        } else {
+            animation.stop();
+        }
+    });
     parameterSlider.onChange(function(v){
         animation.stop();
+        /*
+         * The dat.gui implementation does not handle the valueChange event
+         * initiated from outside the gui, so set the value by hand to trigger
+         * the onChange listener method of the animateCheckbox. If this line
+         * wouldn't be here, the next click would not change its value to
+         * true.
+         */
+        animateCheckbox.setValue(false);
         animation.t = v;
         animation.update();
     });
-    animationGui.add(controls, 'animate');
     var frenetSerretGUI = animationGui.addFolder('Frenet-Serret frame');
     frenetSerretGUI.add(animation.frenetSerretFrame, 'visible').listen();
     var helperLinesGUI = animationGui.addFolder('Helper lines');
     helperLinesGUI.add(animation.linesGroup, 'visible').listen();
     this.gui.add(controls, 'clear');
     this.controlPointGUI = this.gui.addFolder('Control point');
+    this.planeGUI = this.gui.addFolder('Select plane');
+    var planeFunctions = {
+        XY: function() {
+            var euler = new THREE.Euler(0,0,0);
+            self.selectedPlane.euler = euler;
+            self.selectedPlane.start();
+        },
+        ZY: function() {
+            var euler = new THREE.Euler(0,Math.PI/2,0);
+            self.selectedPlane.euler = euler;
+            self.selectedPlane.start();
+        },
+        XZ: function() {
+            var euler = new THREE.Euler(0,Math.PI/2,Math.PI/2);
+            self.selectedPlane.euler = euler;
+            self.selectedPlane.start();
+        },
+    }
+    this.planeGUI.add(planeFunctions, "XY");
+    this.planeGUI.add(planeFunctions, "ZY");
+    this.planeGUI.add(planeFunctions, "XZ");
     this.gui.open();
 
     var self = this;
@@ -72,6 +138,10 @@ function Controls(scene, canvas, camera, bezier, animation) {
     canvas.addEventListener("mouseup", function(e){self.onMouseUp(e)}, false);
     canvas.addEventListener("mousemove", 
                             function(e){self.onMouseMove(e)}, false);
+}
+
+Controls.prototype.update = function() {
+    this.selectedPlane.update();
 }
 
 Controls.prototype.addAxes = function(){
@@ -110,7 +180,11 @@ Controls.prototype.onMouseUp = function( event ) {
         this.rayCaster.setFromCamera(mouse, this.camera);
         var intersection = this.rayCaster.ray
             .intersectPlane(this.controlPointPlane);
-        var newElement = this.bezier.addPoint(intersection);
+        var newElement = this.bezier.addPoint(
+                intersection.applyQuaternion(
+                    this.scene.quaternion.clone().inverse()
+                )
+        );
         this.animation.update();
 
         newElement.select();
@@ -195,7 +269,7 @@ Controls.prototype.onMouseMove = function( event ) {
         if (this.draggedElement) {
             this.moveElement( event );
         } else {
-            this.rotateCamera( event );
+            this.rotateSceneWithMouse( event );
         }
     }
 }
@@ -207,7 +281,9 @@ Controls.prototype.moveElement = function( event ) {
     this.rayCaster.setFromCamera(mouse, this.camera);
     var intersection = this.rayCaster.ray
         .intersectPlane(this.controlPointPlane);
-    this.editedElement.position.copy(intersection);
+    this.editedElement.position.copy(intersection.applyQuaternion(
+        this.scene.quaternion.clone().inverse()
+    ));
     for (var i in this.controlPointGUI.__controllers) {
         this.controlPointGUI.__controllers[i].updateDisplay();
     }
@@ -245,7 +321,7 @@ Controls.prototype.selectElements = function (event ) {
     }
 }
 
-Controls.prototype.rotateCamera = function ( event ) {
+Controls.prototype.rotateSceneWithMouse = function ( event ) {
 
     var newmouse = new THREE.Vector2(
             (event.clientX / window.innerWidth) * 2 -1,
@@ -258,8 +334,8 @@ Controls.prototype.rotateCamera = function ( event ) {
     }
 
     var rotationAxisView = new THREE.Vector3(
-            -(newmouse.y - this.mousemove.pos.y),
-            -(newmouse.x - this.mousemove.pos.x),
+            (newmouse.y - this.mousemove.pos.y),
+            (newmouse.x - this.mousemove.pos.x),
             0);
 
     var length = rotationAxisView.length();
@@ -273,17 +349,7 @@ Controls.prototype.rotateCamera = function ( event ) {
     this.mousemove.pos.copy(newmouse);
     rotationAxisView.normalize();
 
-    var rotation = new THREE.Matrix4();
-    rotation.extractRotation(this.camera.matrix);
-    rotationAxisView.applyMatrix4(rotation);
-
-    rotation.makeRotationAxis(rotationAxisView, 300*length*Math.PI/180);
-    this.camera.position.applyMatrix4(rotation);
-    this.camera.applyMatrix(rotation);
-
-    this.controlPointPlane = new THREE.Plane(
-            this.camera.getWorldDirection(),
-            0);
-
+    rotationAxisView.applyQuaternion(this.scene.quaternion.clone().inverse());
+    this.scene.rotateOnAxis(rotationAxisView, 300*length*Math.PI/180);
 }
 
